@@ -6,6 +6,28 @@ require 'xmmsclient_glib'
 
 @playing = false
 
+@geometry = nil
+@width = 48
+@height = 48
+
+i = 0
+while i < ARGV.length
+  case ARGV[i]
+  when '--geometry'
+    @geometry = ARGV[i + 1]
+    i += 2
+  when '--width'
+    @width = ARGV[i + 1].to_i
+    i += 2
+  when '--height'
+    @height = ARGV[i + 1].to_i
+    i += 2
+  else
+    $stderr.puts('unknown args.')
+    exit 1
+  end
+end
+
 def set_title(id)
   @xmms.medialib_get_info(id).notifier do |res|
     title = nil
@@ -47,7 +69,7 @@ def set_status(status)
     @icon.set_icon_name('gtk-media-play')
     @playing = true
   end
-  @layout.move(@icon, 48 - @icon.allocation.width, 48 - @icon.allocation.height)
+  @layout.move(@icon, @width - @icon.allocation.width, @height - @icon.allocation.height)
 end
 
 def connect_xmms
@@ -75,7 +97,7 @@ def connect_xmms
     mm = sec / 60
     ss = sec % 60
     @playtime.set_text(sprintf('%d:%02d', mm, ss))
-    @layout.move(@playtime, 0, 48 - @playtime.allocation.height)
+    @layout.move(@playtime, 0, @height - @playtime.allocation.height)
     true
   end
 
@@ -103,7 +125,7 @@ toplevel = Gtk::Window.new
 #
 
 button = Gtk::Button.new
-button.set_size_request(48, 48)
+button.set_size_request(@width, @height)
 button.signal_connect('clicked') do
   if @playing
     @xmms.playback_pause.notifier do |res|
@@ -123,13 +145,13 @@ button.add(@layout)
 #
 
 @title = Gtk::Label.new('.')
-@layout.put(@title, 48, 0)
+@layout.put(@title, @width, 0)
 
 title_x = 0
 GLib::Timeout.add(50) do
   title_x -= 1
   if title_x < -@title.allocation.width
-    title_x = 48
+    title_x = @width
   end
   @layout.move(@title, title_x, 0)
   true

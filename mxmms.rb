@@ -4,6 +4,52 @@ require 'gtk3'
 require 'xmmsclient'
 require 'xmmsclient_glib'
 
+@playing = false
+
+def set_title(id)
+  @xmms.medialib_get_info(id).notifier do |res|
+    title = nil
+    artist = nil
+    
+    r = res[:title]
+    if r
+      r.each_pair { |x, y| title = y }
+    end
+    
+    r = res[:artist]
+    if r
+      r.each_pair { |x, y| artist = y }
+    end
+    
+    if title
+      if artist
+        @title.set_text("#{artist} - #{title}")
+      else
+        @title.set_text("#{title}")
+      end
+    else
+      if artist
+        @title.set_text("#{artist} - No Title")
+      else
+        @title.set_text('No Title')
+      end
+    end
+    
+    true
+  end
+end
+
+def set_status(status)
+  if status == 2
+    @icon.set_icon_name('gtk-media-pause')
+    @playing = false
+  else
+    @icon.set_icon_name('gtk-media-play')
+    @playing = true
+  end
+  @layout.move(@icon, 48 - @icon.allocation.width, 48 - @icon.allocation.height)
+end
+
 def connect_xmms
   begin
     @xmms = Xmms::Client.new('mxmms')
@@ -15,47 +61,12 @@ def connect_xmms
   end
   
   @xmms.broadcast_medialib_entry_changed.notifier do |res|
-    @xmms.medialib_get_info(res).notifier do |res2|
-      title = nil
-      artist = nil
-      
-      r = res2[:title]
-      if r
-        r.each_pair { |x, y| title = y }
-      end
-      
-      r = res2[:artist]
-      if r
-        r.each_pair { |x, y| artist = y }
-      end
-      
-      if title
-        if artist
-          @title.set_text("#{artist} - #{title}")
-        else
-          @title.set_text("#{title}")
-        end
-      else
-        if artist
-          @title.set_text("#{artist} - No Title")
-        else
-          @title.set_text('No Title')
-        end
-      end
-      
-      true
-    end
+    set_title(res)
     true
   end
   
   @xmms.broadcast_playback_status.notifier do |res|
-    if res == 2
-      @icon.set_icon_name('gtk-media-pause')
-    else
-      @icon.set_icon_name('gtk-media-play')
-    end
-    @layout.move(@icon, 48 - @icon.allocation.width, 48 - @icon.allocation.height)
-    
+    set_status(res)
     true
   end
   
@@ -74,19 +85,45 @@ def connect_xmms
     connect_xmms
   end
   
+  @xmms.playback_current_id.notifier do |res|
+    set_title(res)
+    true
+  end
+  
+  @xmms.playback_status.notifier do |res|
+    set_status(res)
+    true
+  end
+  
   @xmms.add_to_glib_mainloop
 end
 
 toplevel = Gtk::Window.new
 
+#
+
+button = Gtk::Button.new
+button.set_size_request(48, 48)
+button.signal_connect('clicked') do
+  if @playing
+    @xmms.playback_pause.notifier do |res|
+    end
+  else
+    @xmms.playback_start.notifier do |res|
+    end
+  end
+end
+toplevel.add(button)
+
+#
+
 @layout = Gtk::Layout.new
-@layout.set_size_request(48, 48)
-toplevel.add(@layout)
+button.add(@layout)
 
 #
 
 @title = Gtk::Label.new('.')
-@layout.put(@title, 0, 0)
+@layout.put(@title, 48, 0)
 
 title_x = 0
 GLib::Timeout.add(50) do

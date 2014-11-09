@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# coding: utf-8
 
 require 'gtk3'
 require 'xmmsclient'
@@ -64,24 +65,36 @@ def set_title(id)
 end
 
 def set_status(status)
-  if status == 2
-    @icon.set_icon_name('gtk-media-pause')
-    @playing = false
-  else
+  # 0: 停止/daemon いない
+  # 1: 再生
+  # 2: 一時停止
+  if status == 1
     @icon.set_icon_name('gtk-media-play')
     @playing = true
+  else
+    @icon.set_icon_name('gtk-media-pause')
+    @playing = false
   end
   @layout.move(@icon, @width - @icon.allocation.width, @height - @icon.allocation.height)
 end
 
+def set_playtime(msec)
+  sec = msec / 1000
+  mm = sec / 60
+  ss = sec % 60
+  @playtime.set_text(sprintf('%d:%02d', mm, ss))
+  @layout.move(@playtime, 0, @height - @playtime.allocation.height)
+end
+
 def connect_xmms
+  return true if @xmms
+  
   begin
     @xmms = Xmms::Client.new('mxmms')
     @xmms.connect(ENV['XMMS_PATH'])
   rescue
     @xmms = nil
-    Kernel.sleep(1)
-    retry
+    return true
   end
   
   @xmms.broadcast_medialib_entry_changed.notifier do |res|
@@ -95,18 +108,12 @@ def connect_xmms
   end
   
   @xmms.signal_playback_playtime.notifier do |res|
-    sec = res / 1000
-    mm = sec / 60
-    ss = sec % 60
-    @playtime.set_text(sprintf('%d:%02d', mm, ss))
-    @layout.move(@playtime, 0, @height - @playtime.allocation.height)
+    set_playtime(res)
     true
   end
 
   @xmms.on_disconnect do
-    puts 'disconnected.'
     @xmms = nil
-    connect_xmms
   end
   
   @xmms.playback_current_id.notifier do |res|
@@ -119,7 +126,14 @@ def connect_xmms
     true
   end
   
+  @xmms.playback_playtime.notifier do |res|
+    set_playtime(res)
+    true
+  end
+  
   @xmms.add_to_glib_mainloop
+
+  true
 end
 
 toplevel = Gtk::Window.new
@@ -130,11 +144,13 @@ toplevel.set_wmclass('mxmms', 'MXmms')
 button = Gtk::Button.new
 button.set_size_request(@width, @height)
 button.signal_connect('clicked') do
-  if @playing
-    @xmms.playback_pause.notifier do |res|
-    end
-  else
-    @xmms.playback_start.notifier do |res|
+  if @xmms
+    if @playing
+      @xmms.playback_pause.notifier do |res|
+      end
+    else
+      @xmms.playback_start.notifier do |res|
+      end
     end
   end
 end
@@ -178,6 +194,11 @@ if @geometry
 end
 toplevel.show
 
+#
+
 connect_xmms
+GLib::Timeout.add(1000) do
+  connect_xmms
+end
 
 Gtk.main

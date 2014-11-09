@@ -121,6 +121,9 @@ def connect_xmms
 end
 
 toplevel = Gtk::Window.new
+if @geometry
+  toplevel.parse_geometry(@geometry)
+end
 
 #
 
@@ -147,7 +150,7 @@ button.add(@layout)
 @title = Gtk::Label.new('.')
 @layout.put(@title, @width, 0)
 
-title_x = 0
+title_x = @width
 GLib::Timeout.add(50) do
   title_x -= 1
   if title_x < -@title.allocation.width

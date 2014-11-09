@@ -121,9 +121,7 @@ def connect_xmms
 end
 
 toplevel = Gtk::Window.new
-if @geometry
-  toplevel.parse_geometry(@geometry)
-end
+toplevel.set_wmclass('mxmms', 'MXmms')
 
 #
 
@@ -172,7 +170,11 @@ end
 
 #
 
-toplevel.show_all
+button.show_all
+if @geometry
+  toplevel.parse_geometry(@geometry)
+end
+toplevel.show
 
 connect_xmms
 

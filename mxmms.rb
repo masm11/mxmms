@@ -32,15 +32,17 @@ def set_title(id)
   @xmms.medialib_get_info(id).notifier do |res|
     title = nil
     artist = nil
-    
-    r = res[:title]
-    if r
-      r.each_pair { |x, y| title = y }
-    end
-    
-    r = res[:artist]
-    if r
-      r.each_pair { |x, y| artist = y }
+      
+    if res
+      r = res[:title]
+      if r
+        r.each_pair { |x, y| title = y }
+      end
+      
+      r = res[:artist]
+      if r
+        r.each_pair { |x, y| artist = y }
+      end
     end
     
     if title

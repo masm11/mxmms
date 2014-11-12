@@ -10,6 +10,7 @@ require 'xmmsclient_glib'
 @geometry = nil
 @width = 48
 @height = 48
+@autostart = false
 
 i = 0
 while i < ARGV.length
@@ -23,6 +24,9 @@ while i < ARGV.length
   when '--height'
     @height = ARGV[i + 1].to_i
     i += 2
+  when '--autostart'
+    @autostart = true
+    i += 1
   else
     $stderr.puts('unknown args.')
     exit 1
@@ -93,6 +97,9 @@ def connect_xmms
     @xmms = Xmms::Client.new('mxmms')
     @xmms.connect(ENV['XMMS_PATH'])
   rescue
+    if @autostart
+      system('xmms2-launcher')
+    end
     @xmms = nil
     return true
   end

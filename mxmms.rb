@@ -88,7 +88,11 @@ def set_status(status)
   # 0: 停止/daemon いない
   # 1: 再生
   # 2: 一時停止
-  if status == 1
+  case status
+  when 0
+    @icon.set_icon_name('gtk-media-stop')
+    @playing = false
+  when 1
     @icon.set_icon_name('gtk-media-play')
     @playing = true
   else

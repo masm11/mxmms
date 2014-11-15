@@ -164,6 +164,41 @@ toplevel.set_wmclass('mxmms', 'MXmms')
 
 #
 
+menu = Gtk::Menu.new
+
+item = Gtk::MenuItem.new('Previous')
+item.signal_connect('activate') do
+  if @xmms
+    @xmms.playback_playtime.notifier do |res|
+      if res < 3000
+        @xmms.playlist_set_next_rel(-1).notifier do |res|
+          @xmms.playback_tickle.notifier do |res|
+          end
+        end
+      else
+        @xmms.playback_tickle.notifier do |res|
+        end
+      end
+    end
+  end
+end
+menu.append(item)
+item.show
+
+item = Gtk::MenuItem.new('Next')
+item.signal_connect('activate') do
+  if @xmms
+    @xmms.playlist_set_next_rel(1).notifier do |res|
+      @xmms.playback_tickle.notifier do |res|
+      end
+    end
+  end
+end
+menu.append(item)
+item.show
+
+#
+
 button = Gtk::Button.new
 button.set_size_request(@width, @height)
 button.signal_connect('clicked') do
@@ -176,6 +211,12 @@ button.signal_connect('clicked') do
       end
     end
   end
+end
+button.signal_connect('button-press-event') do |w, ev|
+  if ev.button == 3
+    menu.popup nil, nil, ev.button, ev.time
+  end
+  false
 end
 toplevel.add(button)
 

@@ -21,6 +21,7 @@ require 'gtk3'
 require 'xmmsclient'
 require 'xmmsclient_glib'
 require_relative 'mxmms/playlist'
+require_relative 'mxmms/playlists'
 
 module Test
   def test
@@ -163,6 +164,7 @@ def connect_xmms
   end
   
   Playlist.update_list(@xmms, @menuitem_music)
+  Playlists.update_list(@xmms, @menuitem_list)
   
   @xmms.playback_current_id.notifier do |res|
     set_title(res)
@@ -226,6 +228,10 @@ item.show
 @menuitem_music = Gtk::MenuItem.new('Music')
 menu.append(@menuitem_music)
 @menuitem_music.show
+
+@menuitem_list = Gtk::MenuItem.new('Playlists')
+menu.append(@menuitem_list)
+@menuitem_list.show
 
 #
 

@@ -20,6 +20,14 @@
 require 'gtk3'
 require 'xmmsclient'
 require 'xmmsclient_glib'
+require_relative 'mxmms/playlist'
+
+module Test
+  def test
+    p 'test'
+  end
+  module_function :test
+end
 
 @playing = false
 
@@ -123,14 +131,25 @@ def connect_xmms
     @xmms = nil
     return true
   end
-  
+
   @xmms.broadcast_medialib_entry_changed.notifier do |res|
     set_title(res)
+    Playlist.set_active_menuitem(res)
     true
   end
   
   @xmms.broadcast_playback_status.notifier do |res|
     set_status(res)
+    true
+  end
+
+  @xmms.broadcast_playlist_loaded.notifier do |res|
+    Playlist.update_list(@xmms, @menuitem_music)
+    true
+  end
+
+  @xmms.broadcast_playlist_changed.notifier do |res|
+    Playlist.update_list(@xmms, @menuitem_music)
     true
   end
   
@@ -143,8 +162,11 @@ def connect_xmms
     @xmms = nil
   end
   
+  Playlist.update_list(@xmms, @menuitem_music)
+  
   @xmms.playback_current_id.notifier do |res|
     set_title(res)
+    Playlist.set_active_menuitem(res)
     true
   end
   
@@ -200,6 +222,10 @@ item.signal_connect('activate') do
 end
 menu.append(item)
 item.show
+
+@menuitem_music = Gtk::MenuItem.new('Music')
+menu.append(@menuitem_music)
+@menuitem_music.show
 
 #
 

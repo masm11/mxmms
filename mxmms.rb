@@ -23,13 +23,6 @@ require 'xmmsclient_glib'
 require_relative 'mxmms/playlist'
 require_relative 'mxmms/playlists'
 
-module Test
-  def test
-    p 'test'
-  end
-  module_function :test
-end
-
 @playing = false
 
 @geometry = nil

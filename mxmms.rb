@@ -218,13 +218,13 @@ end
 menu.append(item)
 item.show
 
-@menuitem_music = Gtk::MenuItem.new('Music')
-menu.append(@menuitem_music)
-@menuitem_music.show
-
 @menuitem_list = Gtk::MenuItem.new('Playlists')
 menu.append(@menuitem_list)
 @menuitem_list.show
+
+@menuitem_music = Gtk::MenuItem.new('Music')
+menu.append(@menuitem_music)
+@menuitem_music.show
 
 #
 

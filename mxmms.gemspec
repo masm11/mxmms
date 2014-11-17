@@ -6,5 +6,6 @@ Gem::Specification.new do |s|
   s.email	= 'masm@masm11.ddo.jp'
   s.files	= [ 'bin/mxmms',
                     'lib/mxmms/playlist.rb', 'lib/mxmms/playlists.rb' ]
+  s.executables	<< 'mxmms'
   s.license	= 'GPL'
 end

@@ -81,6 +81,7 @@ def set_title(id)
         @title.set_text('No Title')
       end
     end
+    @title_x = @width
     
     true
   end
@@ -259,13 +260,13 @@ button.add(@layout)
 @title = Gtk::Label.new('.')
 @layout.put(@title, @width, 0)
 
-title_x = @width
+@title_x = @width
 GLib::Timeout.add(50) do
-  title_x -= 1
-  if title_x < -@title.allocation.width
-    title_x = @width
+  @title_x -= 1
+  if @title_x < -@title.allocation.width
+    @title_x = @width
   end
-  @layout.move(@title, title_x, 0)
+  @layout.move(@title, @title_x, 0)
   true
 end
 

@@ -20,8 +20,8 @@
 require 'gtk3'
 require 'xmmsclient'
 require 'xmmsclient_glib'
-require_relative 'mxmms/playlist'
-require_relative 'mxmms/playlists'
+require 'mxmms/playlist'
+require 'mxmms/playlists'
 
 @playing = false
 

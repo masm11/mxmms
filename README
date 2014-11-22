@@ -7,11 +7,7 @@ mxmms - Masm's XMMS2 Client
 
 ☆インストール
 
-gem が必要です。
-
-  gem install gtk3
-
-でインストールしてください。また、xmms2 の ruby binding が必要です。
+まず、xmms2 の ruby binding が必要です。インストールしてください。
 
 その後、
 

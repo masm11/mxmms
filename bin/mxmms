@@ -102,7 +102,7 @@ def set_status(status)
     @icon.set_icon_name('gtk-media-pause')
     @playing = false
   end
-  @layout.move(@icon, @width - @icon.allocation.width, @height - @icon.allocation.height)
+  @layout.move(@icon, @layout.allocation.width - @icon.allocation.width, @layout.allocation.height - @icon.allocation.height)
 end
 
 def set_playtime(msec)
@@ -110,7 +110,7 @@ def set_playtime(msec)
   mm = sec / 60
   ss = sec % 60
   @playtime.set_text(sprintf('%d:%02d', mm, ss))
-  @layout.move(@playtime, 0, @height - @playtime.allocation.height)
+  @layout.move(@playtime, 0, @layout.allocation.height - @playtime.allocation.height)
 end
 
 def connect_xmms
@@ -260,11 +260,11 @@ button.add(@layout)
 @title = Gtk::Label.new('.')
 @layout.put(@title, @width, 0)
 
-@title_x = @width
+@title_x = @layout.allocation.width
 GLib::Timeout.add(50) do
   @title_x -= 1
   if @title_x < -@title.allocation.width
-    @title_x = @width
+    @title_x = @layout.allocation.width
   end
   @layout.move(@title, @title_x, 0)
   true

@@ -1,8 +1,8 @@
 Gem::Specification.new do |s|
   s.name	= 'mxmms'
-  s.version	= '1.0.0'
+  s.version	= '1.0.1'
   s.summary	= "Masm's XMMS2 Client"
-  s.description	= 'XMMS2 client with large play/pause button.'
+  s.description	= 'XMMS2 client with a large play/pause button.'
   s.authors	= ['Yuuki Harano']
   s.email	= 'masm@masm11.ddo.jp'
   s.files	= [ 'README', 'COPYING',

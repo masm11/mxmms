@@ -227,6 +227,25 @@ menu.append(@menuitem_list)
 menu.append(@menuitem_music)
 @menuitem_music.show
 
+item = Gtk::MenuItem.new('About')
+item.signal_connect('activate') do
+  about = Gtk::AboutDialog.new
+  about.program_name = 'MXMMS'
+  about.version = '1.0.1'
+  about.authors = ['Yuuki Harano <masm@masm11.ddo.jp>']
+  about.copyright = 'Copyright (C) 2014 Yuuki Harano'
+  about.comments = 'XMMS2 client with a large play/pause button.'
+  about.license = 'GNU General Public License Version 3.'
+  about.wrap_license = true
+  about.signal_connect('response') do
+    about.hide
+    about = nil
+  end
+  about.show
+end
+menu.append(item)
+item.show
+
 #
 
 button = Gtk::Button.new

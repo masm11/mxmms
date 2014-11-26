@@ -127,22 +127,26 @@ def connect_xmms
     return true
   end
 
+  # 再生する曲が変わった or 再生が開始された。
   @xmms.broadcast_medialib_entry_changed.notifier do |res|
     set_title(res)
     Playlist.set_active_menuitem(res)
     true
   end
   
+  # 再生/停止/一時停止
   @xmms.broadcast_playback_status.notifier do |res|
     set_status(res)
     true
   end
 
+  # プレイリストが切り替わった
   @xmms.broadcast_playlist_loaded.notifier do |res|
     Playlist.update_list(@xmms, @menuitem_music)
     true
   end
 
+  # プレイリストが編集された
   @xmms.broadcast_playlist_changed.notifier do |res|
     Playlist.update_list(@xmms, @menuitem_music)
     true
@@ -159,6 +163,11 @@ def connect_xmms
   
   Playlist.update_list(@xmms, @menuitem_music)
   Playlists.update_list(@xmms, @menuitem_list)
+  
+  @xmms.playlist_current_active.notifier do |res|
+    Playlists.set_active_menuitem(res)
+    true
+  end
   
   @xmms.playback_current_id.notifier do |res|
     set_title(res)

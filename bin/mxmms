@@ -193,6 +193,7 @@ end
 toplevel = Gtk::Window.new
 toplevel.set_wmclass('mxmms', 'MXmms')
 toplevel.decorated = false
+toplevel.type_hint = :dock
 
 #
 

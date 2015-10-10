@@ -242,7 +242,7 @@ item = Gtk::MenuItem.new('About')
 item.signal_connect('activate') do
   about = Gtk::AboutDialog.new
   about.program_name = 'MXMMS'
-  about.version = '1.0.3'
+  about.version = '1.0.4'
   about.authors = ['Yuuki Harano <masm@masm11.ddo.jp>']
   about.copyright = 'Copyright (C) 2014 Yuuki Harano'
   about.comments = 'XMMS2 client with a large play/pause button.'

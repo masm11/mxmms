@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
-require '../rb/lib/mxmms/gui'
-require '../rb/lib/mxmms/backend'
+require 'mxmms/gui'
+require 'mxmms/backend'
 
 gui = Gui.new 100, 100
 

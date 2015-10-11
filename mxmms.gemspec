@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name	= 'mxmms'
-  s.version	= '1.0.4'
+  s.version	= '1.0.5'
   s.summary	= "Masm's XMMS2 Client"
   s.description	= 'XMMS2 client with a large play/pause button.'
   s.authors	= ['Yuuki Harano']

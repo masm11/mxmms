@@ -28,6 +28,16 @@ class Backend
     end
   end
   
+  def playback_toggle
+    if @last_playback_status == 1
+      @xmms.playback_pause.notifier do |res|
+      end
+    else
+      @xmms.playback_start.notifier do |res|
+      end
+    end
+  end
+  
   def set_playback_status_changed_handler(&handler)
     @playback_status_changed_handler = handler
   end
@@ -50,6 +60,13 @@ class Backend
     
     # 再生/停止/一時停止
     @xmms.broadcast_playback_status.notifier do |res|
+      @last_playback_status = res
+      @playback_status_changed_handler.call(res)
+      true
+    end
+    
+    @xmms.playback_status.notifier do |res|
+      @last_playback_status = res
       @playback_status_changed_handler.call(res)
       true
     end

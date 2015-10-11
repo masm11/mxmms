@@ -22,6 +22,8 @@ module Playlist
   @id_to_menuitem = {}
   @current_id = nil
   @pos = 0
+  @updating = false
+  @need_update = false
   
   def update_list_iter(res, xmms)
     if xmms
@@ -63,11 +65,23 @@ module Playlist
         end
       else
         @parent_menuitem.set_submenu @submenu
+        
+        @updating = false
+        if @need_update
+          @need_update = false
+          update_list xmms, @parent_menuitem
+        end
       end
     end
   end
   
   def update_list(xmms, parent_menuitem)
+    if @updating
+      @need_update = true
+      return
+    end
+    @updating = true
+    
     @parent_menuitem = parent_menuitem
     @id_to_menuitem = {}
     
@@ -78,6 +92,11 @@ module Playlist
     pl = xmms.playlist
     pl.entries.notifier do |res|
       @ids = res
+      
+      if @ids.size == 0
+        @updating = false
+        next
+      end
       
       id = @ids.shift
       if id

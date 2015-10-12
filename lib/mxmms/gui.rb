@@ -67,10 +67,55 @@ class Gui
     @button.signal_connect('button-press-event') do |w, ev|
       if ev.button == 3
         print "button3 pressed\n"
+        @menu.popup nil, nil, ev.button, ev.time
       end
       false
     end
     
+    @menu = Gtk::Menu.new
+    
+    menuitem = Gtk::MenuItem.new 'Previous'
+    menuitem.signal_connect('activate') do
+      print "previous\n"
+    end
+    @menu.append menuitem
+    menuitem.show
+    
+    menuitem = Gtk::MenuItem.new 'Next'
+    menuitem.signal_connect('activate') do
+      print "next\n"
+    end
+    @menu.append menuitem
+    menuitem.show
+    
+    @menuitem_list = Gtk::MenuItem.new 'Playlists'
+    @menu.append @menuitem_list
+    @menuitem_list.show
+    
+    @menuitem_music = Gtk::MenuItem.new 'Musics'
+    @menu.append @menuitem_music
+    @menuitem_music.show
+    
+    menuitem = Gtk::MenuItem.new 'About'
+    menuitem.signal_connect('activate') do
+      about = Gtk::AboutDialog.new
+      about.program_name = 'MXMMS'
+      about.version = '2.0.0'
+      about.authors = ['Yuuki Harano <masm@masm11.ddo.jp>']
+      about.copyright = 'Copyright (C) 2014,2015 Yuuki Harano'
+      about.comments = 'XMMS2 client with a large play/pause button.'
+      about.license = 'GNU General Public License Version 3.'
+      about.wrap_license = true
+      about.transient_for = @window
+      about.modal = true
+      about.signal_connect('response') do
+        about.destroy
+        about = nil
+      end
+      about.show
+    end
+    @menu.append menuitem
+    menuitem.show
   end
   
   def set_title title, artist

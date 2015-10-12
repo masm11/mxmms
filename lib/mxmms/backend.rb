@@ -46,6 +46,10 @@ class Backend
     @playback_playtime_changed_handler = handler
   end
   
+  def set_playback_entry_changed_handler(&handler)
+    @playback_entry_changed_handler = handler
+  end
+
   private
   
   def connect_xmms
@@ -86,8 +90,45 @@ class Backend
       true
     end
     
+    # artist, title
+    @xmms.broadcast_medialib_entry_changed.notifier do |res|
+      get_title_from_id(res) do |artist, title|
+        @playback_entry_changed_handler.call artist, title
+      end
+      true
+    end
+    
+    @xmms.playback_current_id.notifier do |res|
+      get_title_from_id(res) do |artist, title|
+        @playback_entry_changed_handler.call artist, title
+      end
+      true
+    end
+    
+    
     @xmms.add_to_glib_mainloop
     true
+  end
+
+  def get_title_from_id(id, &block)
+    @xmms.medialib_get_info(id).notifier do |res|
+      title = nil
+      artist = nil
+      
+      if res
+        r = res[:title]
+        if r
+          r.each_pair { |x, y| title = y }
+        end
+        
+        r = res[:artist]
+        if r
+          r.each_pair { |x, y| artist = y }
+        end
+      end
+      
+      block.call artist, title
+    end
   end
 
 end

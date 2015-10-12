@@ -23,6 +23,10 @@ end
   gui.set_playtime msec / 1000
 end
 
+@backend.set_playback_entry_changed_handler do |artist, title|
+  gui.set_title title, artist
+end
+
 gui.main
 
 #

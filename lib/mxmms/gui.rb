@@ -66,7 +66,6 @@ class Gui
     
     @button.signal_connect('button-press-event') do |w, ev|
       if ev.button == 3
-        print "button3 pressed\n"
         @menu.popup nil, nil, ev.button, ev.time
       end
       false
@@ -157,9 +156,20 @@ class Gui
   end
   
   def set_playlist list
+    first_item = nil
+    submenu = Gtk::Menu.new
+    
     list.each do |e|
       print "#{e[:id]} #{e[:artist]} #{e[:title]}\n"
+      item = Gtk::RadioMenuItem.new first_item, e[:title] || 'No Title'
+      first_item = item unless first_item
+      item.show
+      submenu.add item
+      item.active = false  # fixme:
+      # fixme:
     end
+    
+    @menuitem_music.set_submenu submenu
   end
   
   def set_playlist_list

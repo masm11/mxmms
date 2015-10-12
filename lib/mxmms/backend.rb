@@ -49,7 +49,15 @@ class Backend
   def set_playback_entry_changed_handler(&handler)
     @playback_entry_changed_handler = handler
   end
-
+  
+  def set_playlist_loaded_handler(&handler)
+    @playlist_loaded_handler = handler
+  end
+  
+  def set_playlist_changed_handler(&handler)
+    @playlist_changed_handler = handler
+  end
+  
   private
   
   def connect_xmms
@@ -92,17 +100,40 @@ class Backend
     
     # artist, title
     @xmms.broadcast_medialib_entry_changed.notifier do |res|
-      get_title_from_id(res) do |artist, title|
+      get_title_from_id(res) do |id, artist, title|
         @playback_entry_changed_handler.call artist, title
       end
       true
     end
     
     @xmms.playback_current_id.notifier do |res|
-      get_title_from_id(res) do |artist, title|
+      get_title_from_id(res) do |id, artist, title|
         @playback_entry_changed_handler.call artist, title
       end
       true
+    end
+    
+    # playlist が切り替わった
+    @xmms.broadcast_playlist_loaded.notifier do |res|
+      # fixme: playlist menu の active を変更
+      p res  # encoding がおかしい気がする...
+      get_playlist do |list|
+        @playlist_loaded_handler.call list
+      end
+      true
+    end
+    
+    # playlist が編集された
+    @xmms.broadcast_playlist_changed.notifier do |res|
+      p res
+      get_playlist do |list|
+        @playlist_changed_handler.call list
+      end
+      true
+    end
+    
+    get_playlist do |list|
+      @playlist_loaded_handler.call list
     end
     
     
@@ -110,6 +141,7 @@ class Backend
     true
   end
 
+  # id から該当曲の artist と title を取得する。
   def get_title_from_id(id, &block)
     @xmms.medialib_get_info(id).notifier do |res|
       title = nil
@@ -127,7 +159,47 @@ class Backend
         end
       end
       
-      block.call artist, title
+      block.call id, artist, title
+      true
+    end
+  end
+  
+  # get_playlist から使われるメソッド。
+  def get_playlist_iter(list, ids, id, artist, title, block)
+    entry = {
+      :id => id,
+      :artist => artist,
+      :title => title,
+    }
+    list << entry
+    
+    if ids.size == 0
+      block.call list
+    else
+      id = ids.shift
+      get_title_from_id(id) do |id, artist, title|
+        get_playlist_iter list, ids, id, artist, title, block
+      end
+    end
+  end
+  
+  # playlist を取得する。
+  # 取得が終わったら、callback として block が呼ばれる。
+  def get_playlist(&block)
+    @xmms.playlist.entries.notifier do |res|
+      ids = res
+      list = []
+      
+      if ids.size == 0
+        block.call list
+      else
+        id = ids.shift
+        get_title_from_id(id) do |id, artist, title|
+          get_playlist_iter list, ids, id, artist, title, block
+        end
+      end
+      
+      true
     end
   end
 

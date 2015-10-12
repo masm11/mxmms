@@ -27,6 +27,14 @@ end
   gui.set_title title, artist
 end
 
+@backend.set_playlist_loaded_handler do |list|
+  gui.set_playlist list
+end
+
+@backend.set_playlist_changed_handler do |list|
+  gui.set_playlist list
+end
+
 gui.main
 
 #

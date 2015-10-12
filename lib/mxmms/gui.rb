@@ -111,7 +111,10 @@ class Gui
     @layout.move @playtime, 0, @layout.allocation.height - @playtime.allocation.height
   end
   
-  def set_playlist
+  def set_playlist list
+    list.each do |e|
+      print "#{e[:id]} #{e[:artist]} #{e[:title]}\n"
+    end
   end
   
   def set_playlist_list

@@ -41,7 +41,11 @@ class Backend
   def set_playback_status_changed_handler(&handler)
     @playback_status_changed_handler = handler
   end
-
+  
+  def set_playback_playtime_changed_handler(&handler)
+    @playback_playtime_changed_handler = handler
+  end
+  
   private
   
   def connect_xmms
@@ -68,6 +72,17 @@ class Backend
     @xmms.playback_status.notifier do |res|
       @last_playback_status = res
       @playback_status_changed_handler.call(res)
+      true
+    end
+    
+    # 再生時間
+    @xmms.signal_playback_playtime.notifier do |res|
+      @playback_playtime_changed_handler.call(res)
+      true
+    end
+    
+    @xmms.playback_playtime.notifier do |res|
+      @playback_playtime_changed_handler.call(res)
       true
     end
     

@@ -19,6 +19,10 @@ end
   gui.set_status status
 end
 
+@backend.set_playback_playtime_changed_handler do |msec|
+  gui.set_playtime msec / 1000
+end
+
 gui.main
 
 #

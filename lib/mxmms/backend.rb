@@ -101,14 +101,14 @@ class Backend
     # artist, title
     @xmms.broadcast_medialib_entry_changed.notifier do |res|
       get_title_from_id(res) do |id, artist, title|
-        @playback_entry_changed_handler.call id, artist, title
+        @playback_entry_changed_handler.call id
       end
       true
     end
     
     @xmms.playback_current_id.notifier do |res|
       get_title_from_id(res) do |id, artist, title|
-        @playback_entry_changed_handler.call id, artist, title
+        @playback_entry_changed_handler.call id
       end
       true
     end

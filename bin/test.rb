@@ -24,9 +24,8 @@ end
   gui.set_playtime msec / 1000
 end
 
-@backend.set_playback_entry_changed_handler do |id, artist, title|
-  # fixme: id だけ渡せば良さそう。
-  gui.set_title id, title, artist
+@backend.set_playback_entry_changed_handler do |id|
+  gui.set_current_id id
 end
 
 @backend.set_playlist_loaded_handler do |list|

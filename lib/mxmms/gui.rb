@@ -57,7 +57,7 @@ class Gui
       true
     end
     
-    set_title 0, nil, nil
+    set_current_id 0
     set_status 0
     set_playtime 0
     
@@ -118,7 +118,18 @@ class Gui
     menuitem.show
   end
   
-  def set_title(id, title, artist)
+  def set_current_id(id)
+    artist = nil
+    title = nil
+    if @playlist
+      @playlist.each do |e|
+        if e[:id] == id
+          artist = e[:artist]
+          title = e[:title]
+        end
+      end
+    end
+    
     if title
       if artist
         str = "#{artist} - #{title}"
@@ -126,15 +137,18 @@ class Gui
         str = "#{title}"
       end
     else
-      if artist
-        str = "#{artist} - No Title"
-      else
-        str = 'No Title'
-      end
+      str = 'No Title'
     end
     
+    @current_id = id
     @title.set_text str
     @x = 0
+    
+    if @playlist
+      @playlist.each do |e|
+        e[:menuitem].active = (e[:id] == id)
+      end
+    end
   end
   
   def set_status status
@@ -168,12 +182,13 @@ class Gui
       e[:menuitem] = item
       item.show
       submenu.add item
-      item.active = false  # fixme:
+      item.active = (e[:id] == @current_id)
       # fixme: signal_connect
     end
     
     @menuitem_music.set_submenu submenu
     @playlist = list
+    set_current_id @current_id
   end
   
   def set_playlist_list

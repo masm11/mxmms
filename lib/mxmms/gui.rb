@@ -57,7 +57,7 @@ class Gui
       true
     end
     
-    set_current_id 0
+    set_current_pos 0
     set_status 0
     set_playtime 0
     
@@ -118,16 +118,13 @@ class Gui
     menuitem.show
   end
   
-  def set_current_id(id)
+  def set_current_pos(pos)
+p "set_current_pos: pos=#{pos}"
     artist = nil
     title = nil
     if @playlist
-      @playlist.each do |e|
-        if e[:id] == id
-          artist = e[:artist]
-          title = e[:title]
-        end
-      end
+      artist = @playlist[pos][:artist]
+      title = @playlist[pos][:title]
     end
     
     if title
@@ -140,14 +137,12 @@ class Gui
       str = 'No Title'
     end
     
-    @current_id = id
+    @current_pos = pos
     @title.set_text str
     @x = 0
     
     if @playlist
-      @playlist.each do |e|
-        e[:menuitem].active = (e[:id] == id)
-      end
+      @playlist[pos][:menuitem].active = true
     end
   end
   
@@ -174,7 +169,8 @@ class Gui
   def set_playlist list
     first_item = nil
     submenu = Gtk::Menu.new
-    
+    pos = 0
+
     list.each do |e|
       # print "#{e[:id]} #{e[:artist]} #{e[:title]}\n"
       item = Gtk::RadioMenuItem.new first_item, e[:title] || 'No Title'
@@ -182,13 +178,19 @@ class Gui
       e[:menuitem] = item
       item.show
       submenu.add item
-      item.active = (e[:id] == @current_id)
-      # fixme: signal_connect
+      item.active = (pos == @current_pos)
+      item.signal_connect('activate', pos) do |w, pos|
+        if pos != @current_pos
+          print "jump: pos=#{pos}\n"
+          @jump_pos_handler.call pos
+        end
+      end
+      pos += 1
     end
     
     @menuitem_music.set_submenu submenu
     @playlist = list
-    set_current_id @current_id
+    set_current_pos @current_pos
   end
   
   def set_playlist_list
@@ -198,8 +200,8 @@ class Gui
     @playpause_handler = handler
   end
   
-  def set_change_music_handler(&handler)
-    @change_music_handler = handler
+  def set_jump_pos_handler(&handler)
+    @jump_pos_handler = handler
   end
   
   def set_change_playlist_handler

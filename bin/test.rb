@@ -10,8 +10,8 @@ gui.set_playpause_handler do
   @backend.playback_toggle
 end
 
-gui.set_change_music_handler do |id|
-  print "change " + id.to_s + "\n"
+gui.set_jump_pos_handler do |pos|
+  @backend.jump_pos pos
 end
 
 @backend = Backend.new
@@ -24,8 +24,8 @@ end
   gui.set_playtime msec / 1000
 end
 
-@backend.set_playback_entry_changed_handler do |id|
-  gui.set_current_id id
+@backend.set_playback_entry_changed_handler do |pos|
+  gui.set_current_pos pos
 end
 
 @backend.set_playlist_loaded_handler do |list|

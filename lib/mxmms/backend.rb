@@ -58,6 +58,13 @@ class Backend
     @playlist_changed_handler = handler
   end
   
+  def jump_pos(pos)
+    @xmms.playlist_set_next(pos).notifier do |res|
+      @xmms.playback_tickle.notifier do |res|
+      end
+    end
+  end
+
   private
   
   def connect_xmms
@@ -98,18 +105,16 @@ class Backend
       true
     end
     
-    # artist, title
+    # 曲が変わった。
     @xmms.broadcast_medialib_entry_changed.notifier do |res|
-      get_title_from_id(res) do |id, artist, title|
-        @playback_entry_changed_handler.call id
+      @xmms.playlist.current_pos.notifier do |res|
+        @playback_entry_changed_handler.call res[:position]  # 0-base
       end
       true
     end
     
-    @xmms.playback_current_id.notifier do |res|
-      get_title_from_id(res) do |id, artist, title|
-        @playback_entry_changed_handler.call id
-      end
+    @xmms.playlist.current_pos.notifier do |res|
+      @playback_entry_changed_handler.call res[:position]
       true
     end
     

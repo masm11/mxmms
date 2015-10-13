@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# coding: utf-8
 
 # mxmms - Masm's XMMS2 Client
 # Copyright (C) 2014,2015 Yuuki Harano
@@ -56,7 +57,7 @@ class Gui
       true
     end
     
-    set_title nil, nil
+    set_title 0, nil, nil
     set_status 0
     set_playtime 0
     
@@ -117,7 +118,7 @@ class Gui
     menuitem.show
   end
   
-  def set_title title, artist
+  def set_title(id, title, artist)
     if title
       if artist
         str = "#{artist} - #{title}"
@@ -155,21 +156,24 @@ class Gui
     @layout.move @playtime, 0, @layout.allocation.height - @playtime.allocation.height
   end
   
+  @playlist = []
   def set_playlist list
     first_item = nil
     submenu = Gtk::Menu.new
     
     list.each do |e|
-      print "#{e[:id]} #{e[:artist]} #{e[:title]}\n"
+      # print "#{e[:id]} #{e[:artist]} #{e[:title]}\n"
       item = Gtk::RadioMenuItem.new first_item, e[:title] || 'No Title'
       first_item = item unless first_item
+      e[:menuitem] = item
       item.show
       submenu.add item
       item.active = false  # fixme:
-      # fixme:
+      # fixme: signal_connect
     end
     
     @menuitem_music.set_submenu submenu
+    @playlist = list
   end
   
   def set_playlist_list

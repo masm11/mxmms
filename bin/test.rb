@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# coding: utf-8
 
 require 'mxmms/gui'
 require 'mxmms/backend'
@@ -23,8 +24,9 @@ end
   gui.set_playtime msec / 1000
 end
 
-@backend.set_playback_entry_changed_handler do |artist, title|
-  gui.set_title title, artist
+@backend.set_playback_entry_changed_handler do |id, artist, title|
+  # fixme: id だけ渡せば良さそう。
+  gui.set_title id, title, artist
 end
 
 @backend.set_playlist_loaded_handler do |list|

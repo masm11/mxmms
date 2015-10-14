@@ -57,7 +57,7 @@ class Gui
       true
     end
     
-    set_current_pos 0
+    # set_current_pos 0
     set_status 0
     set_playtime 0
     
@@ -172,7 +172,7 @@ p "set_current_pos: pos=#{pos}"
     pos = 0
 
     list.each do |e|
-      # print "#{e[:id]} #{e[:artist]} #{e[:title]}\n"
+      print "#{pos}: #{e[:id]}: #{e[:artist]} #{e[:title]}\n"
       item = Gtk::RadioMenuItem.new first_item, e[:title] || 'No Title'
       first_item = item unless first_item
       e[:menuitem] = item
@@ -180,7 +180,7 @@ p "set_current_pos: pos=#{pos}"
       submenu.add item
       item.active = (pos == @current_pos)
       item.signal_connect('activate', pos) do |w, pos|
-        if pos != @current_pos
+        if w.active? && pos != @current_pos
           print "jump: pos=#{pos}\n"
           @jump_pos_handler.call pos
         end

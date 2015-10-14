@@ -58,11 +58,20 @@ class Backend
     @playlist_changed_handler = handler
   end
   
+  def set_playlist_list_retr_handler(&handler)
+    @playlist_list_retr_handler = handler
+  end
+  
   def jump_pos(pos)
     @xmms.playlist_set_next(pos).notifier do |res|
       @xmms.playback_tickle.notifier do |res|
       end
     end
+  end
+  
+  def change_playlist(name)
+    p 'change_playlist: ' + name
+    # @xmms.playlist
   end
 
   private
@@ -120,15 +129,16 @@ class Backend
     
     # playlist が切り替わった
     @xmms.broadcast_playlist_loaded.notifier do |res|
-      # fixme: playlist menu の active を変更
-      p res  # encoding がおかしい気がする...
+      name = res
+      p name
       get_playlist do |list|
-        @playlist_loaded_handler.call list
+        @playlist_loaded_handler.call name, list
       end
       true
     end
     
     # playlist が編集された
+    # 再生中の playlist ではない playlist かもしれない。
     @xmms.broadcast_playlist_changed.notifier do |res|
       p res
       get_playlist do |list|
@@ -137,9 +147,18 @@ class Backend
       true
     end
     
-    get_playlist do |list|
-      @playlist_loaded_handler.call list
+    @xmms.playlist_current_active.notifier do |res|
+      name = res
+      get_playlist do |list|
+        @playlist_loaded_handler.call name, list
+      end
     end
+    
+    # playlist list を取得
+    get_playlist_list do |list|
+      @playlist_list_retr_handler.call list
+    end
+    
     
     
     @xmms.add_to_glib_mainloop
@@ -204,6 +223,13 @@ class Backend
         end
       end
       
+      true
+    end
+  end
+
+  def get_playlist_list(&block)
+    @xmms.playlist_list.notifier do |res|
+      block.call res.sort
       true
     end
   end

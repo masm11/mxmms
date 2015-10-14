@@ -14,6 +14,10 @@ gui.set_jump_pos_handler do |pos|
   @backend.jump_pos pos
 end
 
+gui.set_change_playlist_handler do |name|
+  @backend.change_playlist name
+end
+
 @backend = Backend.new
 
 @backend.set_playback_status_changed_handler do |status|
@@ -28,12 +32,16 @@ end
   gui.set_current_pos pos
 end
 
-@backend.set_playlist_loaded_handler do |list|
-  gui.set_playlist list
+@backend.set_playlist_loaded_handler do |name, list|
+  gui.set_playlist name, list
 end
 
 @backend.set_playlist_changed_handler do |list|
-  gui.set_playlist list
+  gui.set_playlist nil, list	# fixme: nil->name
+end
+
+@backend.set_playlist_list_retr_handler do |list|
+  gui.set_playlist_list list
 end
 
 gui.main

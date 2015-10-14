@@ -122,7 +122,7 @@ class Gui
 p "set_current_pos: pos=#{pos}"
     artist = nil
     title = nil
-    if @playlist
+    if @playlist && @playlist[pos]
       artist = @playlist[pos][:artist]
       title = @playlist[pos][:title]
     end
@@ -141,7 +141,7 @@ p "set_current_pos: pos=#{pos}"
     @title.set_text str
     @x = 0
     
-    if @playlist
+    if @playlist && @playlist[pos]
       @playlist[pos][:menuitem].active = true
     end
   end
@@ -166,11 +166,11 @@ p "set_current_pos: pos=#{pos}"
   end
   
   @playlist = []
-  def set_playlist list
+  def set_playlist(name, list)
     first_item = nil
     submenu = Gtk::Menu.new
     pos = 0
-
+    
     list.each do |e|
       print "#{pos}: #{e[:id]}: #{e[:artist]} #{e[:title]}\n"
       item = Gtk::RadioMenuItem.new first_item, e[:title] || 'No Title'
@@ -188,12 +188,40 @@ p "set_current_pos: pos=#{pos}"
       pos += 1
     end
     
+    if @playlist_list[name]
+      @playlist_list[name].active = true
+    end
+    
     @menuitem_music.set_submenu submenu
     @playlist = list
+    @current_playlist = name
     set_current_pos @current_pos
   end
   
-  def set_playlist_list
+  @playlist_list = {}
+  def set_playlist_list(list)
+    @playlist_list = {}
+    first_item = nil
+    submenu = Gtk::Menu.new
+    
+    list.each do |e|
+      print "#{e}\n"
+      item = Gtk::RadioMenuItem.new first_item, e || 'No Title'
+      first_item = item unless first_item
+      item.show
+      submenu.add item
+      item.active = (e == @current_playlist)
+      item.signal_connect('activate', e) do |w, name|
+        if w.active? && name != @current_playlist
+          # print "jump: pos=#{pos}\n"
+          @change_playlist_handler.call name
+        end
+      end
+      @playlist_list[e] = item
+    end
+    
+    @menuitem_list.set_submenu submenu
+    # set_current_pos @current_pos
   end
   
   def set_playpause_handler(&handler)
@@ -204,7 +232,8 @@ p "set_current_pos: pos=#{pos}"
     @jump_pos_handler = handler
   end
   
-  def set_change_playlist_handler
+  def set_change_playlist_handler(&handler)
+    @change_playlist_handler = handler
   end
 
   def set_next_handler

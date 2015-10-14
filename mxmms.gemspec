@@ -1,13 +1,15 @@
+require './lib/mxmms/version'
+
 Gem::Specification.new do |s|
   s.name	= 'mxmms'
-  s.version	= '1.0.5'
+  s.version	= VERSION
   s.summary	= "Masm's XMMS2 Client"
   s.description	= 'XMMS2 client with a large play/pause button.'
   s.authors	= ['Yuuki Harano']
   s.email	= 'masm@masm11.ddo.jp'
   s.files	= [ 'README', 'COPYING',
-                    'bin/mxmms',
-                    'lib/mxmms/playlist.rb', 'lib/mxmms/playlists.rb' ]
+                    'bin/mxmms', 'lib/mxmms/version.rb',
+                    'lib/mxmms/backend.rb', 'lib/mxmms/gui.rb' ]
   s.executables	<< 'mxmms'
   s.homepage	= 'https://github.com/masm11/mxmms'
   s.license	= 'GPL'

@@ -18,6 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 require 'gtk3'
+require 'mxmms/version'
 
 class Gui
 
@@ -100,7 +101,7 @@ class Gui
     menuitem.signal_connect('activate') do
       about = Gtk::AboutDialog.new
       about.program_name = 'MXMMS'
-      about.version = '2.0.0'
+      about.version = VERSION
       about.authors = ['Yuuki Harano <masm@masm11.ddo.jp>']
       about.copyright = 'Copyright (C) 2014,2015 Yuuki Harano'
       about.comments = 'XMMS2 client with a large play/pause button.'

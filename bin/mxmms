@@ -1,330 +1,49 @@
 #!/usr/bin/env ruby
 # coding: utf-8
 
-# mxmms - Masm's XMMS2 Client
-# Copyright (C) 2014,2015 Yuuki Harano
-# 
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-# 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+require 'mxmms/gui'
+require 'mxmms/backend'
 
-require 'gtk3'
-require 'xmmsclient'
-require 'xmmsclient_glib'
-require 'mxmms/playlist'
-require 'mxmms/playlists'
+gui = Gui.new 100, 100
 
-@playing = false
-
-@geometry = nil
-@width = 48
-@height = 48
-@autostart = false
-
-i = 0
-while i < ARGV.length
-  case ARGV[i]
-  when '--geometry'
-    @geometry = ARGV[i + 1]
-    i += 2
-  when '--width'
-    @width = ARGV[i + 1].to_i
-    i += 2
-  when '--height'
-    @height = ARGV[i + 1].to_i
-    i += 2
-  when '--autostart'
-    @autostart = true
-    i += 1
-  else
-    $stderr.puts('unknown args.')
-    exit 1
-  end
+gui.set_playpause_handler do
+  @backend.playback_toggle
 end
 
-def set_title(id)
-  @xmms.medialib_get_info(id).notifier do |res|
-    title = nil
-    artist = nil
-      
-    if res
-      r = res[:title]
-      if r
-        r.each_pair { |x, y| title = y }
-      end
-      
-      r = res[:artist]
-      if r
-        r.each_pair { |x, y| artist = y }
-      end
-    end
-    
-    if title
-      if artist
-        @title.set_text("#{artist} - #{title}")
-      else
-        @title.set_text("#{title}")
-      end
-    else
-      if artist
-        @title.set_text("#{artist} - No Title")
-      else
-        @title.set_text('No Title')
-      end
-    end
-    @title_x = @width
-    
-    true
-  end
+gui.set_jump_pos_handler do |pos|
+  @backend.jump_pos pos
 end
 
-def set_status(status)
-  # 0: 停止/daemon いない
-  # 1: 再生
-  # 2: 一時停止
-  case status
-  when 0
-    @icon.set_icon_name('gtk-media-stop')
-    @playing = false
-  when 1
-    @icon.set_icon_name('gtk-media-play')
-    @playing = true
-  else
-    @icon.set_icon_name('gtk-media-pause')
-    @playing = false
-  end
-  @layout.move(@icon, @layout.allocation.width - @icon.allocation.width, @layout.allocation.height - @icon.allocation.height)
+gui.set_change_playlist_handler do |name|
+  @backend.change_playlist name
 end
 
-def set_playtime(msec)
-  sec = msec / 1000
-  mm = sec / 60
-  ss = sec % 60
-  @playtime.set_text(sprintf('%d:%02d', mm, ss))
-  @layout.move(@playtime, 0, @layout.allocation.height - @playtime.allocation.height)
+@backend = Backend.new
+
+@backend.set_playback_status_changed_handler do |status|
+  gui.set_status status
 end
 
-def connect_xmms
-  return true if @xmms
-  
-  begin
-    @xmms = Xmms::Client.new('mxmms')
-    @xmms.connect(ENV['XMMS_PATH'])
-  rescue
-    if @autostart
-      system('xmms2-launcher')
-    end
-    @xmms = nil
-    return true
-  end
-
-  # 再生する曲が変わった or 再生が開始された。
-  @xmms.broadcast_medialib_entry_changed.notifier do |res|
-    set_title(res)
-    Playlist.set_active_menuitem(res)
-    true
-  end
-  
-  # 再生/停止/一時停止
-  @xmms.broadcast_playback_status.notifier do |res|
-    set_status(res)
-    true
-  end
-
-  # プレイリストが切り替わった
-  @xmms.broadcast_playlist_loaded.notifier do |res|
-    Playlist.update_list(@xmms, @menuitem_music)
-    true
-  end
-
-  # プレイリストが編集された
-  @xmms.broadcast_playlist_changed.notifier do |res|
-    Playlist.update_list(@xmms, @menuitem_music)
-    true
-  end
-  
-  @xmms.signal_playback_playtime.notifier do |res|
-    set_playtime(res)
-    true
-  end
-
-  @xmms.on_disconnect do
-    @xmms = nil
-  end
-  
-  Playlist.update_list(@xmms, @menuitem_music)
-  Playlists.update_list(@xmms, @menuitem_list)
-  
-  @xmms.playlist_current_active.notifier do |res|
-    Playlists.set_active_menuitem(res)
-    true
-  end
-  
-  @xmms.playback_current_id.notifier do |res|
-    set_title(res)
-    Playlist.set_active_menuitem(res)
-    true
-  end
-  
-  @xmms.playback_status.notifier do |res|
-    set_status(res)
-    true
-  end
-  
-  @xmms.playback_playtime.notifier do |res|
-    set_playtime(res)
-    true
-  end
-  
-  @xmms.add_to_glib_mainloop
-
-  true
+@backend.set_playback_playtime_changed_handler do |msec|
+  gui.set_playtime msec / 1000
 end
 
-toplevel = Gtk::Window.new
-toplevel.set_wmclass('mxmms', 'MXmms')
-toplevel.decorated = false
-toplevel.type_hint = :dock
+@backend.set_playback_entry_changed_handler do |pos|
+  gui.set_current_pos pos
+end
+
+@backend.set_playlist_loaded_handler do |name, list|
+  gui.set_playlist name, list
+end
+
+@backend.set_playlist_changed_handler do |list|
+  gui.set_playlist nil, list	# fixme: nil->name
+end
+
+@backend.set_playlist_list_retr_handler do |list|
+  gui.set_playlist_list list
+end
+
+gui.main
 
 #
-
-menu = Gtk::Menu.new
-
-item = Gtk::MenuItem.new('Previous')
-item.signal_connect('activate') do
-  if @xmms
-    @xmms.playback_playtime.notifier do |res|
-      if res < 3000
-        @xmms.playlist_set_next_rel(-1).notifier do |res|
-          @xmms.playback_tickle.notifier do |res|
-          end
-        end
-      else
-        @xmms.playback_tickle.notifier do |res|
-        end
-      end
-    end
-  end
-end
-menu.append(item)
-item.show
-
-item = Gtk::MenuItem.new('Next')
-item.signal_connect('activate') do
-  if @xmms
-    @xmms.playlist_set_next_rel(1).notifier do |res|
-      @xmms.playback_tickle.notifier do |res|
-      end
-    end
-  end
-end
-menu.append(item)
-item.show
-
-@menuitem_list = Gtk::MenuItem.new('Playlists')
-menu.append(@menuitem_list)
-@menuitem_list.show
-
-@menuitem_music = Gtk::MenuItem.new('Music')
-menu.append(@menuitem_music)
-@menuitem_music.show
-
-item = Gtk::MenuItem.new('About')
-item.signal_connect('activate') do
-  about = Gtk::AboutDialog.new
-  about.program_name = 'MXMMS'
-  about.version = '1.0.5'
-  about.authors = ['Yuuki Harano <masm@masm11.ddo.jp>']
-  about.copyright = 'Copyright (C) 2014,2015 Yuuki Harano'
-  about.comments = 'XMMS2 client with a large play/pause button.'
-  about.license = 'GNU General Public License Version 3.'
-  about.wrap_license = true
-  about.transient_for = toplevel
-  about.modal = true
-  about.signal_connect('response') do
-    about.destroy
-    about = nil
-  end
-  about.show
-end
-menu.append(item)
-item.show
-
-#
-
-button = Gtk::Button.new
-button.set_size_request(@width, @height)
-button.signal_connect('clicked') do
-  if @xmms
-    if @playing
-      @xmms.playback_pause.notifier do |res|
-      end
-    else
-      @xmms.playback_start.notifier do |res|
-      end
-    end
-  end
-end
-button.signal_connect('button-press-event') do |w, ev|
-  if ev.button == 3
-    menu.popup nil, nil, ev.button, ev.time
-  end
-  false
-end
-toplevel.add(button)
-
-#
-
-@layout = Gtk::Layout.new
-button.add(@layout)
-
-#
-
-@title = Gtk::Label.new('.')
-@layout.put(@title, @width, 0)
-
-@title_x = @layout.allocation.width
-GLib::Timeout.add(50) do
-  @title_x -= 1
-  if @title_x < -@title.allocation.width
-    @title_x = @layout.allocation.width
-  end
-  @layout.move(@title, @title_x, 0)
-  true
-end
-
-#
-
-@playtime = Gtk::Label.new('0:00')
-@layout.put(@playtime, 0, 0)
-
-#
-
-@icon = Gtk::Image.new(:icon_name => 'gtk-media-pause', :size => :small_toolbar)
-@layout.put(@icon, 0, 0)
-
-#
-
-button.show_all
-if @geometry
-  toplevel.parse_geometry(@geometry)
-end
-toplevel.show
-
-#
-
-connect_xmms
-GLib::Timeout.add(1000) do
-  connect_xmms
-end
-
-Gtk.main

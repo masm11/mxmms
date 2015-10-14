@@ -2,7 +2,7 @@
 # coding: utf-8
 
 # mxmms - Masm's XMMS2 Client
-# Copyright (C) 2014 Yuuki Harano
+# Copyright (C) 2014,2015 Yuuki Harano
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -244,7 +244,7 @@ item.signal_connect('activate') do
   about.program_name = 'MXMMS'
   about.version = '1.0.5'
   about.authors = ['Yuuki Harano <masm@masm11.ddo.jp>']
-  about.copyright = 'Copyright (C) 2014 Yuuki Harano'
+  about.copyright = 'Copyright (C) 2014,2015 Yuuki Harano'
   about.comments = 'XMMS2 client with a large play/pause button.'
   about.license = 'GNU General Public License Version 3.'
   about.wrap_license = true

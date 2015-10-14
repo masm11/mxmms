@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # mxmms - Masm's XMMS2 Client
-# Copyright (C) 2014 Yuuki Harano
+# Copyright (C) 2014,2015 Yuuki Harano
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

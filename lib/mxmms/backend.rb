@@ -71,7 +71,9 @@ class Backend
   
   def change_playlist(name)
     p 'change_playlist: ' + name
-    # @xmms.playlist
+    @xmms.playlist(name).load.notifier do |res|
+      true
+    end
   end
 
   private

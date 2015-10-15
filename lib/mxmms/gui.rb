@@ -22,7 +22,7 @@ require 'mxmms/version'
 
 class Gui
 
-  def initialize(width, height)
+  def initialize(geometry, width, height)
     @x = 0
     
     @window = Gtk::Window.new
@@ -48,6 +48,7 @@ class Gui
     @layout.put @icon, 0, 0
     
     @window.show_all
+    @window.parse_geometry geometry
     
     GLib::Timeout.add(50) do
       @x -= 1

@@ -4,7 +4,34 @@
 require 'mxmms/gui'
 require 'mxmms/backend'
 
-gui = Gui.new 100, 100
+geometry = nil
+width = 48
+height = 48
+autostart = false
+
+i = 0
+while i < ARGV.length
+  case ARGV[i]
+  when '--geometry'
+    geometry = ARGV[i + 1]
+    i += 2
+  when '--width'
+    width = ARGV[i + 1].to_i
+    i += 2
+  when '--height'
+    height = ARGV[i + 1].to_i
+    i += 2
+  when '--autostart'
+    autostart = true
+    i += 1
+  else
+    $stderr.puts('unknown args.')
+    exit 1
+  end
+end
+
+
+gui = Gui.new geometry, width, height
 
 gui.set_playpause_handler do
   @backend.playback_toggle
@@ -18,7 +45,7 @@ gui.set_change_playlist_handler do |name|
   @backend.change_playlist name
 end
 
-@backend = Backend.new
+@backend = Backend.new autostart
 
 @backend.set_playback_status_changed_handler do |status|
   gui.set_status status

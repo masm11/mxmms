@@ -22,7 +22,9 @@ require 'xmmsclient_glib'
 
 class Backend
   
-  def initialize
+  def initialize autostart
+    @autostart = autostart
+    
     GLib::Timeout.add(1000) do
       connect_xmms
     end

@@ -203,6 +203,7 @@ p "set_current_pos: pos=#{pos}"
     
     @menuitem_music.set_submenu submenu
     @playlist = list
+p "set current_playlist: #{name}"
     @current_playlist = name
     set_current_pos @current_pos
   end
@@ -243,8 +244,14 @@ p "set_current_pos: pos=#{pos}"
       submenu.add item
       item.active = (e == @current_playlist)
       item.signal_connect('activate', e) do |w, name|
-        if w.active? && name != @current_playlist
+p "activate: #{w.active?}, #{name}, #{@current_playlist}"
+        # 起動時、@current_playlist が取得できていない段階で呼ばれ、
+        # playlist が切り替わったものと判断されてしまう。
+        # それを避けるため、@current_playlist が nil でないことも
+        # 条件に入れておく。
+        if w.active? && @current_playlist && name != @current_playlist
           # print "jump: pos=#{pos}\n"
+p 'call change_playlist_handler'
           @change_playlist_handler.call name
         end
       end

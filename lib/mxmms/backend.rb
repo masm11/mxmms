@@ -74,6 +74,8 @@ class Backend
   def change_playlist(name)
     p 'change_playlist: ' + name
     @xmms.playlist(name).load.notifier do |res|
+      # プレイリストを切り替えたら先頭から再生
+      jump_pos 0
       true
     end
   end
@@ -152,14 +154,17 @@ class Backend
     end
     
     @xmms.playlist_current_active.notifier do |res|
+p 'playlist_current_active: callback'
       name = res
       get_playlist do |list|
+p 'get_playlist: callback'
         @playlist_loaded_handler.call name, list
       end
     end
     
     # playlist list を取得
     get_playlist_list do |list|
+p 'get_playlist_list: callback'
       @playlist_list_retr_handler.call list
     end
     

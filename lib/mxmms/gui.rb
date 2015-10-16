@@ -48,7 +48,9 @@ class Gui
     @layout.put @icon, 0, 0
     
     @window.show_all
-    @window.parse_geometry geometry
+    if geometry
+      @window.parse_geometry geometry
+    end
     
     GLib::Timeout.add(50) do
       @x -= 1
@@ -78,14 +80,18 @@ class Gui
     
     menuitem = Gtk::MenuItem.new 'Previous'
     menuitem.signal_connect('activate') do
-      print "previous\n"
+      if @current_playtime < 3
+        skip -1
+      else
+        skip 0
+      end
     end
     @menu.append menuitem
     menuitem.show
     
     menuitem = Gtk::MenuItem.new 'Next'
     menuitem.signal_connect('activate') do
-      print "next\n"
+      skip 1
     end
     @menu.append menuitem
     menuitem.show
@@ -161,6 +167,7 @@ p "set_current_pos: pos=#{pos}"
   end
   
   def set_playtime sec
+    @current_playtime = sec
     mm = sec / 60
     ss = sec % 60
     @playtime.set_text sprintf('%d:%02d', mm, ss)
@@ -200,6 +207,28 @@ p "set_current_pos: pos=#{pos}"
     set_current_pos @current_pos
   end
   
+  def skip(dir)
+    newpos = @current_pos
+    case dir
+    when -1
+      newpos -= 1
+      if newpos < 0
+        newpos = @playlist.length - 1
+      end
+
+    when 1
+      newpos += 1
+      if newpos >= @playlist.length
+        newpos = 0
+      end
+
+    end
+
+    if newpos >= 0 && newpos < @playlist.length
+      @jump_pos_handler.call newpos
+    end
+  end
+
   @playlist_list = {}
   def set_playlist_list(list)
     @playlist_list = {}

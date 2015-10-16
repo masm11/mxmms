@@ -267,12 +267,6 @@ p "set_current_pos: pos=#{pos}"
     @change_playlist_handler = handler
   end
 
-  def set_next_handler
-  end
-
-  def set_prev_handler
-  end
-
   def main
     Gtk.main
   end

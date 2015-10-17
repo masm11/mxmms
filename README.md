@@ -27,14 +27,14 @@ mxmms
 
 The shown window is a button, so you can click it to play/pause.
 
-When you click it with the right button, a menu is shown and
+When you click it with the right button, a menu pops up and
 you can change music or playlist.
 
 The following options are available:
 
- - --geometry <position>
- - --width <width>
- - --height <height>
+ - --geometry &lt;position&gt;
+ - --width &lt;width&gt;
+ - --height &lt;height&gt;
  - --autostart
 
 ## License
@@ -43,4 +43,4 @@ GPL3. See COPYING.
 
 ## Author
 
-Yuuki Harano <masm@masm11.ddo.jp>
+Yuuki Harano &lt;masm@masm11.ddo.jp&gt;

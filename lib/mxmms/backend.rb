@@ -143,32 +143,23 @@ class Backend
       true
     end
     
-    # playlist が編集された
-    # 再生中の playlist ではない playlist かもしれない。
-    @xmms.broadcast_playlist_changed.notifier do |res|
-      p res
-      get_playlist do |list|
-        @playlist_changed_handler.call list
-      end
-      true
-    end
-    
     @xmms.playlist_current_active.notifier do |res|
-p 'playlist_current_active: callback'
       name = res
       get_playlist do |list|
-p 'get_playlist: callback'
         @playlist_loaded_handler.call name, list
       end
     end
     
-    # playlist list を取得
     get_playlist_list do |list|
-p 'get_playlist_list: callback'
       @playlist_list_retr_handler.call list
     end
-    
-    
+    # playlist list を取得
+    GLib::Timeout.add(1000) do
+      get_playlist_list do |list|
+        @playlist_list_retr_handler.call list
+      end
+      true
+    end
     
     @xmms.add_to_glib_mainloop
     true

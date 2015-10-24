@@ -231,7 +231,22 @@ p "set current_playlist: #{name}"
   end
 
   @playlist_list = {}
+  @submenu_list = nil
   def set_playlist_list(list)
+    need_update = false
+    new_size = list.size
+    old_size = @playlist_list ? @playlist_list.size : 0
+    if new_size == old_size
+      # 個数が同じなら、同じかもしれない。中身を逐一確認する。
+      list.each do |e|
+        need_update = true unless @playlist_list[e]
+      end
+    else
+      # 個数が違うなら、更新する
+      need_update = true
+    end
+    return unless need_update
+
     @playlist_list = {}
     first_item = nil
     submenu = Gtk::Menu.new
@@ -258,7 +273,11 @@ p 'call change_playlist_handler'
       @playlist_list[e] = item
     end
     
+    if @list_submenu
+      @list_submenu.destroy
+    end
     @menuitem_list.set_submenu submenu
+    @list_submenu = submenu
     # set_current_pos @current_pos
   end
   

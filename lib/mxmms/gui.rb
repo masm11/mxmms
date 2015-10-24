@@ -128,6 +128,12 @@ class Gui
   
   def set_current_pos(pos)
 p "set_current_pos: pos=#{pos}"
+    # 起動直後はそういうこともある。
+    return unless pos
+    # backend から -1 が渡ってくる場合もある。
+    # xmms2 list で「->」がないような場合。
+    pos = 0 if pos < 0
+
     artist = nil
     title = nil
     if @playlist && @playlist[pos]

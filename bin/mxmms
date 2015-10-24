@@ -63,10 +63,6 @@ end
   gui.set_playlist name, list
 end
 
-@backend.set_playlist_changed_handler do |list|
-  gui.set_playlist nil, list	# fixme: nil->name
-end
-
 @backend.set_playlist_list_retr_handler do |list|
   gui.set_playlist_list list
 end

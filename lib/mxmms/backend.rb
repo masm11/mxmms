@@ -56,10 +56,6 @@ class Backend
     @playlist_loaded_handler = handler
   end
   
-  def set_playlist_changed_handler(&handler)
-    @playlist_changed_handler = handler
-  end
-  
   def set_playlist_list_retr_handler(&handler)
     @playlist_list_retr_handler = handler
   end
@@ -133,6 +129,16 @@ class Backend
       true
     end
     
+    # playlist が編集された
+    @xmms.broadcast_playlist_changed.notifier do |res|
+      # どの playlist が編集されたかは置いといて、
+      # 現在の playlist を取得する。
+      get_playlist do |list|
+        @playlist_loaded_handler.call nil, list
+      end
+      true
+    end
+
     # playlist が切り替わった
     @xmms.broadcast_playlist_loaded.notifier do |res|
       name = res

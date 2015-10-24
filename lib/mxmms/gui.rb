@@ -174,6 +174,12 @@ p "set_current_pos: pos=#{pos}"
     @layout.move @playtime, 0, @layout.allocation.height - @playtime.allocation.height
   end
   
+  def replace_submenu(menuitem, submenu)
+    old = menuitem.submenu
+    old.destroy if old
+    menuitem.submenu = submenu
+  end
+
   @playlist = []
   def set_playlist(name, list)
     first_item = nil
@@ -197,14 +203,17 @@ p "set_current_pos: pos=#{pos}"
       pos += 1
     end
     
-    if @playlist_list[name]
-      @playlist_list[name].active = true
+    if name
+      if @playlist_list[name]
+        @playlist_list[name].active = true
+      end
     end
     
-    @menuitem_music.set_submenu submenu
+    replace_submenu @menuitem_music, submenu
+    
     @playlist = list
 p "set current_playlist: #{name}"
-    @current_playlist = name
+    @current_playlist = name if name
     set_current_pos @current_pos
   end
   
@@ -231,7 +240,6 @@ p "set current_playlist: #{name}"
   end
 
   @playlist_list = {}
-  @submenu_list = nil
   def set_playlist_list(list)
     need_update = false
     new_size = list.size
@@ -273,11 +281,8 @@ p 'call change_playlist_handler'
       @playlist_list[e] = item
     end
     
-    if @list_submenu
-      @list_submenu.destroy
-    end
-    @menuitem_list.set_submenu submenu
-    @list_submenu = submenu
+    replace_submenu @menuitem_list, submenu
+    
     # set_current_pos @current_pos
   end
   

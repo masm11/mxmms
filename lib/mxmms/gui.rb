@@ -194,7 +194,8 @@ p "set_current_pos: pos=#{pos}"
     
     list.each do |e|
       print "#{pos}: #{e[:id]}: #{e[:artist]} #{e[:title]}\n"
-      item = Gtk::RadioMenuItem.new first_item, e[:title] || 'No Title'
+      label = (pos + 1).to_s + '. ' + (e[:title] || 'No Title')
+      item = Gtk::RadioMenuItem.new first_item, label
       first_item = item unless first_item
       e[:menuitem] = item
       item.show

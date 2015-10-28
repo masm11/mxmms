@@ -72,7 +72,16 @@ gui.set_music_list_handler do |pos, id, artist, title|
     config = Config.new
     str = config.music_list_handler pos, id, artist, title
   else
-#    str = "#{pos}. #{id}: #{artist} - #{title}"
+    str = "#{pos + 1}. #{title}"
+  end
+  str
+end
+
+gui.set_main_title_handler do |pos, id, artist, title|
+  if Config.method_defined?(:main_title_handler)
+    config = Config.new
+    str = config.main_title_handler pos, id, artist, title
+  else
     str = "#{pos + 1}. #{title}"
   end
   str

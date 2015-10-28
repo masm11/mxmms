@@ -65,6 +65,23 @@ class Gui
     set_status 0
     set_playtime 0
     
+#    set_music_list_handler do |pos, id, artist, title|
+#      "#{pos}. #{title}"
+#    end
+
+    set_main_title_handler do |pos, id, artist, title|
+      if title
+        if artist
+          str = "#{artist} - #{title}"
+        else
+          str = "#{title}"
+        end
+      else
+        str = 'No Title'
+      end
+      str
+    end
+
     @button.signal_connect('clicked') do
       @playpause_handler.call
     end
@@ -136,20 +153,14 @@ p "set_current_pos: pos=#{pos}"
 
     artist = nil
     title = nil
+    id = nil
     if @playlist && @playlist[pos]
       artist = @playlist[pos][:artist]
       title = @playlist[pos][:title]
+      id = @playlist[pos][:id]
     end
     
-    if title
-      if artist
-        str = "#{artist} - #{title}"
-      else
-        str = "#{title}"
-      end
-    else
-      str = 'No Title'
-    end
+    str = @main_title_handler.call pos, id, artist, title
     
     @current_pos = pos
     @title.set_text str
@@ -194,7 +205,8 @@ p "set_current_pos: pos=#{pos}"
     
     list.each do |e|
       print "#{pos}: #{e[:id]}: #{e[:artist]} #{e[:title]}\n"
-      label = (pos + 1).to_s + '. ' + (e[:title] || 'No Title')
+#      label = (pos + 1).to_s + '. ' + (e[:title] || 'No Title')
+      label = @music_list_handler.call pos, e[:id], e[:artist], e[:title]
       item = Gtk::RadioMenuItem.new first_item, label
       first_item = item unless first_item
       e[:menuitem] = item
@@ -303,6 +315,14 @@ p 'call change_playlist_handler'
   
   def set_change_playlist_handler(&handler)
     @change_playlist_handler = handler
+  end
+
+  def set_music_list_handler(&handler)
+    @music_list_handler = handler
+  end
+
+  def set_main_title_handler(&handler)
+    @main_title_handler = handler
   end
 
   def main

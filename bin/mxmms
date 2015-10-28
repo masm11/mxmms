@@ -67,6 +67,20 @@ end
   gui.set_playlist_list list
 end
 
+gui.set_music_list_handler do |pos, id, artist, title|
+  if Config.method_defined?(:music_list_handler)
+    config = Config.new
+    str = config.music_list_handler pos, id, artist, title
+  else
+#    str = "#{pos}. #{id}: #{artist} - #{title}"
+    str = "#{pos + 1}. #{title}"
+  end
+  str
+end
+
+rcfile = "#{ENV['HOME']}/.mxmms/rc.rb"
+load rcfile if File.exist?(rcfile)
+
 gui.main
 
 #

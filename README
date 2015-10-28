@@ -65,8 +65,8 @@ mxmms - Masm's XMMS2 Client
   これら2つのメソッドには引数が渡されます。
     pos:    playlist 中の位置。1曲めは 0。
     id:     曲番号。
-    artist: アーティスト名。
-    title:  曲名。
+    artist: アーティスト名。なければ nil。
+    title:  曲名。なければ nil。
 
 ☆使用条件・著作権
 

@@ -65,8 +65,8 @@ These two methods accept arguments:
 
  - pos: position in the playlist. 0 for first music.
  - id: music id.
- - artist: artist.
- - title: music title.
+ - artist: artist or nil.
+ - title: music title or nil.
 
 ## License
 

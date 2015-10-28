@@ -41,6 +41,33 @@ mxmms - Masm's XMMS2 Client
   --autostart
     xmms2d が起動していない場合に自動的に起動します。
 
+☆その他の設定
+
+  mxmms は初期化後に ~/.mxmms/rc.rb を読み込み実行します。
+  この機能を使って、若干の設定を行うことができます。
+
+  playlist の表示形式を設定する:
+
+      class Config
+        def music_list_handler(pos, id, artist, title)
+          "#{pos + 1}. #{artist} - #{title}"
+        end
+      end
+
+  ボタンに表示する曲名の表示形式を設定する:
+
+      class Config
+	def main_title_handler(pos, id, artist, title)
+	  "#{artist} - #{title}"
+	end
+      end
+
+  これら2つのメソッドには引数が渡されます。
+    pos:    playlist 中の位置。1曲めは 0。
+    id:     曲番号。
+    artist: アーティスト名。
+    title:  曲名。
+
 ☆使用条件・著作権
 
 GPL3 です。COPYING を参照してください。

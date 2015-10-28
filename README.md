@@ -37,6 +37,37 @@ The following options are available:
  - --height &lt;height&gt;
  - --autostart
 
+## Other Settings
+
+mxmms reads and executes ~/.mxmms/rc.rb, so you can do a few configuration.
+
+Configure playlist format:
+
+```ruby
+class Config
+  def music_list_handler(pos, id, artist, title)
+    "#{pos + 1}. #{artist} - #{title}"
+  end
+end
+```
+
+Configure strings on the main button.
+
+```ruby
+class Config
+  def main_title_handler(pos, id, artist, title)
+    "#{artist} - #{title}"
+  end
+end
+```
+
+These two methods accept arguments:
+
+ - pos: position in the playlist. 0 for first music.
+ - id: music id.
+ - artist: artist.
+ - title: music title.
+
 ## License
 
 GPL3. See COPYING.

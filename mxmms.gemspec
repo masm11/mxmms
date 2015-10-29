@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.description	= 'XMMS2 client with a large play/pause button.'
   s.authors	= ['Yuuki Harano']
   s.email	= 'masm@masm11.ddo.jp'
-  s.files	= [ 'README', 'COPYING',
+  s.files	= [ 'README', 'README.md', 'COPYING',
                     'bin/mxmms', 'lib/mxmms/version.rb',
                     'lib/mxmms/backend.rb', 'lib/mxmms/gui.rb' ]
   s.executables	<< 'mxmms'

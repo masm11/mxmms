@@ -60,6 +60,10 @@ class Backend
     @playlist_list_retr_handler = handler
   end
   
+  def set_repeat_mode_handler(&handler)
+    @repeat_mode_handler = handler
+  end
+
   def jump_pos(pos)
     @xmms.playlist_set_next(pos).notifier do |res|
       @xmms.playback_tickle.notifier do |res|
@@ -73,6 +77,24 @@ class Backend
       # プレイリストを切り替えたら先頭から再生
       jump_pos 0
       true
+    end
+  end
+
+  def set_repeat_mode(mode)
+    case mode
+    when :none
+      one = '0'
+      all = '0'
+    when :one
+      one = '1'
+      all = '0'
+    when :all
+      one = '0'
+      all = '1'
+    end
+    @xmms.config_set_value('playlist.repeat_one', one).notifier do |res|
+      @xmms.config_set_value('playlist.repeat_all', all).notifier do |res|
+      end
     end
   end
 
@@ -167,6 +189,41 @@ class Backend
       true
     end
     
+    @xmms.broadcast_config_value_changed.notifier do |res|
+      @xmms.config_get_value('playlist.repeat_one').notifier do |res|
+        if res != '0'
+          @repeat_mode_handler.call :one
+        else
+          @xmms.config_get_value('playlist.repeat_all').notifier do |res|
+            if res != '0'
+              @repeat_mode_handler.call :all
+            else
+              @repeat_mode_handler.call :none
+            end
+            true
+          end
+        end
+        true
+      end
+      true
+    end
+
+    @xmms.config_get_value('playlist.repeat_one').notifier do |res|
+      if res != '0'
+        @repeat_mode_handler.call :one
+      else
+        @xmms.config_get_value('playlist.repeat_all').notifier do |res|
+          if res != '0'
+            @repeat_mode_handler.call :all
+          else
+            @repeat_mode_handler.call :none
+          end
+          true
+        end
+      end
+      true
+    end
+
     @xmms.add_to_glib_mainloop
     true
   end

@@ -104,6 +104,29 @@ class Gui
     @menu.append @menuitem_music
     @menuitem_music.show
     
+    @menuitem_repeat = Gtk::MenuItem.new 'Repeat Mode'
+    @menu.append @menuitem_repeat
+    @menuitem_repeat.show
+
+    submenu = Gtk::Menu.new
+    @repeat_items = {}
+    [:none, :one, :all].each do |mode|
+      label = 'None'
+      label = 'One' if mode == :one
+      label = 'All' if mode == :all
+      item = Gtk::RadioMenuItem.new @repeat_items[:none], label
+      item.signal_connect('activate', mode) do |w, mode|
+        if w.active?
+          @repeat_mode_handler.call mode
+        end
+      end
+      @repeat_items[mode] = item
+      item.show
+      submenu.add item
+    end
+    submenu.show
+    @menuitem_repeat.submenu = submenu
+
     menuitem = Gtk::MenuItem.new 'About'
     menuitem.signal_connect('activate') do
       about = Gtk::AboutDialog.new
@@ -288,6 +311,10 @@ p 'call change_playlist_handler'
     # set_current_pos @current_pos
   end
   
+  def set_repeat_mode(mode)
+    @repeat_items[mode].active = true
+  end
+
   def set_playpause_handler(&handler)
     @playpause_handler = handler
   end
@@ -306,6 +333,10 @@ p 'call change_playlist_handler'
 
   def set_main_title_handler(&handler)
     @main_title_handler = handler
+  end
+
+  def set_repeat_mode_handler(&handler)
+    @repeat_mode_handler = handler
   end
 
   def main

@@ -87,6 +87,14 @@ gui.set_main_title_handler do |pos, id, artist, title|
   str
 end
 
+@backend.set_repeat_mode_handler do |mode|
+  gui.set_repeat_mode mode
+end
+
+gui.set_repeat_mode_handler do |mode|
+  @backend.set_repeat_mode mode
+end
+
 rcfile = "#{ENV['HOME']}/.mxmms/rc.rb"
 load rcfile if File.exist?(rcfile)
 

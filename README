@@ -68,6 +68,16 @@ mxmms - Masm's XMMS2 Client
     artist: アーティスト名。なければ nil。
     title:  曲名。なければ nil。
 
+  リピートモードを設定する:
+
+      GLib::Timeout.add(2000) do
+	@backend.set_repeat_mode :all
+	false
+      end
+
+   :none, :one, :all が選択できます。
+   タイミング的問題があるようで、2秒程待っています。
+
 ☆使用条件・著作権
 
 GPL3 です。COPYING を参照してください。

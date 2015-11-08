@@ -68,6 +68,17 @@ These two methods accept arguments:
  - artist: artist or nil.
  - title: music title or nil.
 
+Configure repeat mode.
+
+```ruby
+GLib::Timeout.add(2000) do
+  @backend.set_repeat_mode :all
+  false
+end
+```
+
+You can pass one of :none, :one, and :all.
+
 ## License
 
 GPL3. See COPYING.

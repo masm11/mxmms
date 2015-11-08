@@ -64,23 +64,6 @@ class Gui
     # set_current_pos 0
     set_status 0
     set_playtime 0
-    
-#    set_music_list_handler do |pos, id, artist, title|
-#      "#{pos}. #{title}"
-#    end
-
-    set_main_title_handler do |pos, id, artist, title|
-      if title
-        if artist
-          str = "#{artist} - #{title}"
-        else
-          str = "#{title}"
-        end
-      else
-        str = 'No Title'
-      end
-      str
-    end
 
     @button.signal_connect('clicked') do
       @playpause_handler.call

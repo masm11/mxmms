@@ -78,6 +78,7 @@ end
 ```
 
 You can pass one of :none, :one, and :all.
+I'm sorry for the timing issue.
 
 ## License
 

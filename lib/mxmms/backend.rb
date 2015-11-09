@@ -189,41 +189,17 @@ class Backend
       true
     end
     
+    # config が変わった
     @xmms.broadcast_config_value_changed.notifier do |res|
-      @xmms.config_get_value('playlist.repeat_one').notifier do |res|
-        if res != '0'
-          @repeat_mode_handler.call :one
-        else
-          @xmms.config_get_value('playlist.repeat_all').notifier do |res|
-            if res != '0'
-              @repeat_mode_handler.call :all
-            else
-              @repeat_mode_handler.call :none
-            end
-            true
-          end
-        end
-        true
+      get_repeat_mode do |mode|
+        @repeat_mode_handler.call mode
       end
-      true
     end
-
-    @xmms.config_get_value('playlist.repeat_one').notifier do |res|
-      if res != '0'
-        @repeat_mode_handler.call :one
-      else
-        @xmms.config_get_value('playlist.repeat_all').notifier do |res|
-          if res != '0'
-            @repeat_mode_handler.call :all
-          else
-            @repeat_mode_handler.call :none
-          end
-          true
-        end
-      end
-      true
+    
+    get_repeat_mode do |mode|
+      @repeat_mode_handler.call mode
     end
-
+    
     @xmms.add_to_glib_mainloop
     true
   end
@@ -293,6 +269,24 @@ class Backend
   def get_playlist_list(&block)
     @xmms.playlist_list.notifier do |res|
       block.call res.sort
+      true
+    end
+  end
+
+  def get_repeat_mode(&block)
+    @xmms.config_get_value('playlist.repeat_one').notifier do |res|
+      if res != '0'
+        block.call :one
+      else
+        @xmms.config_get_value('playlist.repeat_all').notifier do |res|
+          if res != '0'
+            block.call :all
+          else
+            block.call :none
+          end
+          true
+        end
+      end
       true
     end
   end

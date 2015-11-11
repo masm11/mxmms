@@ -27,6 +27,7 @@ class Backend
     
     GLib::Timeout.add(1000) do
       connect_xmms
+      true
     end
   end
   
@@ -114,6 +115,10 @@ class Backend
       return true
     end
     
+    @xmms.on_disconnect do
+      @xmms = nil
+    end
+    
     # 再生/停止/一時停止
     @xmms.broadcast_playback_status.notifier do |res|
       @last_playback_status = res
@@ -183,10 +188,14 @@ class Backend
     end
     # playlist list を取得
     GLib::Timeout.add(1000) do
-      get_playlist_list do |list|
-        @playlist_list_retr_handler.call list
+      rv = false
+      if @xmms
+        get_playlist_list do |list|
+          @playlist_list_retr_handler.call list
+        end
+        rv = true
       end
-      true
+      rv
     end
     
     # config が変わった

@@ -8,6 +8,7 @@ geometry = nil
 width = 48
 height = 48
 autostart = false
+only30sec = false
 
 i = 0
 while i < ARGV.length
@@ -23,6 +24,9 @@ while i < ARGV.length
     i += 2
   when '--autostart'
     autostart = true
+    i += 1
+  when '--30sec'
+    only30sec = true
     i += 1
   else
     $stderr.puts('unknown args.')
@@ -101,6 +105,12 @@ end
 
 rcfile = "#{ENV['HOME']}/.mxmms/rc.rb"
 load rcfile if File.exist?(rcfile)
+
+if only30sec
+  GLib::Timeout.add(30 * 1000) do
+    exit
+  end
+end
 
 gui.main
 

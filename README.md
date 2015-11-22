@@ -28,7 +28,10 @@ mxmms
 The shown window is a button, so you can click it to play/pause.
 
 When you click it with the right button, a menu pops up and
-you can change music or playlist.
+you can change music or playlist, or seek.
+
+For seek, seekbar is shown, and you can seek with it.
+When you completed, the seekbar disappears when you click outside the app.
 
 The following options are available:
 

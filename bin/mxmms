@@ -37,6 +37,10 @@ gui.set_playpause_handler do
   @backend.playback_toggle
 end
 
+gui.set_seek_handler do |sec|
+  @backend.seek sec
+end
+
 gui.set_jump_pos_handler do |pos|
   @backend.jump_pos pos
 end

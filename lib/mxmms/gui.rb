@@ -29,6 +29,13 @@ class Gui
     @window.set_wmclass 'mxmms', 'MXmms'
     @window.decorated = false
     @window.type_hint = :dock
+    @window.signal_connect('button-press-event') do |w, ev|
+      if @scalewin
+        Gdk.pointer_ungrab Gdk::CURRENT_TIME
+        @scalewin.destroy
+        @scalewin = nil
+      end
+    end
     
     @button = Gtk::Button.new
     @window.add @button
@@ -77,6 +84,37 @@ class Gui
     end
     
     @menu = Gtk::Menu.new
+    
+    @adj = Gtk::Adjustment.new 0, 0, 0, 0, 0, 0
+    
+    menuitem = Gtk::MenuItem.new 'Seek'
+    menuitem.signal_connect('activate') do |w|
+      @scalewin = Gtk::Window.new
+      @scalewin.set_size_request 200, 1
+      @scalewin.decorated = false
+      
+      @scale = Gtk::Scale.new Gtk::Orientation::HORIZONTAL, @adj
+      @scale.signal_connect('change-value') do |w|
+        @seek_handler.call @adj.value
+      end
+      @scale.signal_connect('format-value') do |w, val|
+        sprintf('%d:%02d', val / 60, val % 60)
+      end
+      @scale.show
+      @scalewin.add @scale
+      
+      r = Gdk.pointer_grab @window.window, true,
+                       Gdk::EventMask::BUTTON_PRESS_MASK | Gdk::EventMask::BUTTON_RELEASE_MASK | Gdk::EventMask::BUTTON_MOTION_MASK,
+                       nil, nil, Gdk::CURRENT_TIME
+      if r == :success
+        @scalewin.show
+      else
+        @scalewin.destroy
+        @scalewin = nil
+      end
+    end
+    @menu.append menuitem
+    menuitem.show
     
     menuitem = Gtk::MenuItem.new 'Previous'
     menuitem.signal_connect('activate') do
@@ -159,14 +197,16 @@ p "set_current_pos: pos=#{pos}"
 
     artist = nil
     title = nil
+    duration = 0
     id = nil
     if @playlist && @playlist[pos]
+      id = @playlist[pos][:id]
       artist = @playlist[pos][:artist]
       title = @playlist[pos][:title]
-      id = @playlist[pos][:id]
+      duration = @playlist[pos][:duration]
     end
     
-    str = @main_title_handler.call pos, id, artist, title
+    str = @main_title_handler.call pos, id, artist, title, duration
     
     @current_pos = pos
     @title.set_text str
@@ -174,6 +214,10 @@ p "set_current_pos: pos=#{pos}"
     
     if @playlist && @playlist[pos]
       @playlist[pos][:menuitem].active = true
+    end
+    if @adj
+      @adj.upper = duration / 1000
+      @adj.value = 0
     end
   end
   
@@ -195,6 +239,9 @@ p "set_current_pos: pos=#{pos}"
     ss = sec % 60
     @playtime.set_text sprintf('%d:%02d', mm, ss)
     @layout.move @playtime, 0, @layout.allocation.height - @playtime.allocation.height
+    if @adj
+      @adj.value = sec
+    end
   end
   
   def replace_submenu(menuitem, submenu)
@@ -319,6 +366,10 @@ p 'call change_playlist_handler'
     @playpause_handler = handler
   end
   
+  def set_seek_handler(&handler)
+    @seek_handler = handler
+  end
+
   def set_jump_pos_handler(&handler)
     @jump_pos_handler = handler
   end

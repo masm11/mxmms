@@ -92,16 +92,17 @@ class Gui
       @scalewin = Gtk::Window.new
       @scalewin.set_size_request 200, 1
       @scalewin.decorated = false
+      @scalewin.transient_for = @window
       
-      @scale = Gtk::Scale.new Gtk::Orientation::HORIZONTAL, @adj
-      @scale.signal_connect('change-value') do |w|
+      scale = Gtk::Scale.new Gtk::Orientation::HORIZONTAL, @adj
+      scale.signal_connect('change-value') do |w|
         @seek_handler.call @adj.value
       end
-      @scale.signal_connect('format-value') do |w, val|
+      scale.signal_connect('format-value') do |w, val|
         sprintf('%d:%02d', val / 60, val % 60)
       end
-      @scale.show
-      @scalewin.add @scale
+      scale.show
+      @scalewin.add scale
       
       r = Gdk.pointer_grab @window.window, true,
                        Gdk::EventMask::BUTTON_PRESS_MASK | Gdk::EventMask::BUTTON_RELEASE_MASK | Gdk::EventMask::BUTTON_MOTION_MASK,

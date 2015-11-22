@@ -41,6 +41,11 @@ class Backend
     end
   end
   
+  def seek(sec)
+    @xmms.playback_seek_ms(sec.to_i * 1000).notifier do |res|
+    end
+  end
+
   def set_playback_status_changed_handler(&handler)
     @playback_status_changed_handler = handler
   end
@@ -218,6 +223,7 @@ class Backend
     @xmms.medialib_get_info(id).notifier do |res|
       title = nil
       artist = nil
+      duration = 0
       
       if res
         r = res[:title]
@@ -229,19 +235,25 @@ class Backend
         if r
           r.each_pair { |x, y| artist = y }
         end
+        
+        r = res[:duration]
+        if r
+          r.each_pair { |x, y| duration = y }
+        end
       end
       
-      block.call id, artist, title
+      block.call id, artist, title, duration
       true
     end
   end
   
   # get_playlist から使われるメソッド。
-  def get_playlist_iter(list, ids, id, artist, title, block)
+  def get_playlist_iter(list, ids, id, artist, title, duration, block)
     entry = {
       :id => id,
       :artist => artist,
       :title => title,
+      :duration => duration,
     }
     list << entry
     
@@ -249,8 +261,8 @@ class Backend
       block.call list
     else
       id = ids.shift
-      get_title_from_id(id) do |id, artist, title|
-        get_playlist_iter list, ids, id, artist, title, block
+      get_title_from_id(id) do |id, artist, title, duration|
+        get_playlist_iter list, ids, id, artist, title, duration, block
       end
     end
   end
@@ -266,8 +278,8 @@ class Backend
         block.call list
       else
         id = ids.shift
-        get_title_from_id(id) do |id, artist, title|
-          get_playlist_iter list, ids, id, artist, title, block
+        get_title_from_id(id) do |id, artist, title, duration|
+          get_playlist_iter list, ids, id, artist, title, duration, block
         end
       end
       

@@ -208,6 +208,7 @@ class Backend
       get_repeat_mode do |mode|
         @repeat_mode_handler.call mode
       end
+      true
     end
     
     get_repeat_mode do |mode|

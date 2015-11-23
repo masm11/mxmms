@@ -174,7 +174,7 @@ class Backend
     # playlist が切り替わった
     @xmms.broadcast_playlist_loaded.notifier do |res|
       name = res
-      p name
+      name.encode!('UTF-8', 'UTF-8')
       get_playlist do |list|
         @playlist_loaded_handler.call name, list
       end
@@ -183,6 +183,7 @@ class Backend
     
     @xmms.playlist_current_active.notifier do |res|
       name = res
+      name.encode!('UTF-8', 'UTF-8')
       get_playlist do |list|
         @playlist_loaded_handler.call name, list
       end
@@ -243,6 +244,9 @@ class Backend
         end
       end
       
+      title.encode!('UTF-8', 'UTF-8') if title
+      artist.encode!('UTF-8', 'UTF-8') if artist
+      
       block.call id, artist, title, duration
       true
     end
@@ -290,6 +294,9 @@ class Backend
 
   def get_playlist_list(&block)
     @xmms.playlist_list.notifier do |res|
+      res.each do |s|
+        s.encode!('UTF-8', 'UTF-8')
+      end
       block.call res.sort
       true
     end

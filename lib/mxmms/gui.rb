@@ -333,7 +333,6 @@ p "set current_playlist: #{name}"
     submenu = Gtk::Menu.new
     
     list.each do |e|
-      print "#{e}\n"
       item = Gtk::RadioMenuItem.new first_item, e || 'No Title'
       first_item = item unless first_item
       item.show

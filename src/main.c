@@ -168,10 +168,36 @@ static gboolean timer(gpointer user_data)
     return G_SOURCE_CONTINUE;
 }
 
+static void about(GtkAction *action, gpointer data)
+{
+    gtk_show_about_dialog(NULL,
+	    "program-name", "Mxmms",
+	    "comments", "Masm's XMMS2 Client With a Large Button.",
+	    "copyright", "Copyright © 2016 Yuuki Harano",
+	    "license-type", GTK_LICENSE_GPL_3_0,
+	    "version", "0.1.0",
+	    NULL);
+}
+
 static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer user_data)
 {
     struct work_t *w = &work;
     w->applet = applet;
+    
+    static const char *xml =
+	    "<menuitem name=\"About\" action=\"ShowMxmmsAbout\" />";
+    
+    static const GtkActionEntry actions[] = {
+	{ "ShowMxmmsAbout", GTK_STOCK_ABOUT, "About", NULL, NULL, G_CALLBACK(about) },
+	// { "ShowMxmmsHelp", GTK_STOCK_HELP, "Help", NULL, NULL, G_CALLBACK(help) },
+    };
+    
+    GtkActionGroup *agrp;
+    
+    agrp = gtk_action_group_new("Mxmms Applet Actions");
+    gtk_action_group_add_actions(agrp, actions, sizeof actions / sizeof actions[0], NULL);
+    
+    mate_panel_applet_setup_menu(MATE_PANEL_APPLET(applet), xml, agrp);
     
     w->title_x = w->size;
     

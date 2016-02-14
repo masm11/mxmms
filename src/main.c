@@ -77,13 +77,14 @@ static int playback_title_got(xmmsv_t *val, void *user_data)
     char buf[1024];
     const char *artist = NULL, *title = NULL;
     
-    xmmsv_dict_get(val, "title", &dict);
-    xmmsv_dict_foreach(dict, getting_string, &title);
+    /* 面倒な構造してる。*/
+    if (xmmsv_dict_get(val, "title", &dict))
+	xmmsv_dict_foreach(dict, getting_string, &title);
     if (title == NULL)
 	title = "No Title";
     
-    xmmsv_dict_get(val, "artist", &dict);
-    xmmsv_dict_foreach(dict, getting_string, &artist);
+    if (xmmsv_dict_get(val, "artist", &dict))
+	xmmsv_dict_foreach(dict, getting_string, &artist);
     
     if (artist != NULL)
 	g_snprintf(buf, sizeof buf, "%s - %s", artist, title);

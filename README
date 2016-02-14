@@ -5,81 +5,24 @@ mxmms - Masm's XMMS2 Client
 
 ボタンに曲名、再生時間、状態を表示しています。
 
+☆必要なもの
+
+ - XMMS2 0.8 DrO_o
+ - MATE
+
 ☆インストール
 
-まず、xmms2 の ruby binding が必要です。インストールしてください。
-
-その後、
-
-    make install
-
-を実行してください。
+make -C src all
+sudo cp src/mxmms /usr/lib/mate-applets/
+sudo cp org.mate.panel.applet.MxmmsAppletFactory.service /usr/share/dbus-1/services/
+sudo cp org.mate.panel.MxmmsApplet.mate-panel-applet /usr/share/mate-panel/applets/
 
 ☆使い方
 
-  mxmms
-
-と実行してください。
+パネルにアプレットを追加してください。
 
 表示されたウィンドウ全体がボタンになっていますので、クリックすれば再生/
 一時停止します。
-
-右クリックするとメニューが表示され、頭出し、曲の変更、プレイリストの切り
-替え、シークができます。
-
-シークについては、シークバーが表示されますので、それで操作してください。
-操作が終わったらアプリ外をクリックするとシークバーは消えます。
-
-以下にオプションについて説明します。
-
-  --geometry <position>
-    ウィンドウの表示位置を指定します。
-  
-  --width <width>
-    ウィンドウの幅を指定します。
-  
-  --height <height>
-    ウィンドウの高さを指定します。
-  
-  --autostart
-    xmms2d が起動していない場合に自動的に起動します。
-
-☆その他の設定
-
-  mxmms は初期化後に ~/.mxmms/rc.rb を読み込み実行します。
-  この機能を使って、若干の設定を行うことができます。
-
-  playlist の表示形式を設定する:
-
-      class Config
-        def music_list_handler(pos, id, artist, title)
-          "#{pos + 1}. #{artist} - #{title}"
-        end
-      end
-
-  ボタンに表示する曲名の表示形式を設定する:
-
-      class Config
-	def main_title_handler(pos, id, artist, title)
-	  "#{artist} - #{title}"
-	end
-      end
-
-  これら2つのメソッドには引数が渡されます。
-    pos:    playlist 中の位置。1曲めは 0。
-    id:     曲番号。
-    artist: アーティスト名。なければ nil。
-    title:  曲名。なければ nil。
-
-  リピートモードを設定する:
-
-      GLib::Timeout.add(2000) do
-	@backend.set_repeat_mode :all
-	false
-      end
-
-   :none, :one, :all が選択できます。
-   タイミング的問題があるようで、2秒程待っています。
 
 ☆使用条件・著作権
 

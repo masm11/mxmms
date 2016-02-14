@@ -7,81 +7,25 @@ so I create an app with a large button.
 
 The title, playtime, and status is shown on the button.
 
+## Requirements
+
+ - XMMS2 0.8 DrO_o
+ - MATE
+
 ## Installation
 
-At first, you need xmms2 ruby binding, so install it.
-
-After that, do:
-
 ```sh
-make install
+make -C src all
+sudo cp src/mxmms /usr/lib/mate-applets/
+sudo cp org.mate.panel.applet.MxmmsAppletFactory.service /usr/share/dbus-1/services/
+sudo cp org.mate.panel.MxmmsApplet.mate-panel-applet /usr/share/mate-panel/applets/
 ```
 
 ## Usage
 
-Run:
+Add an applet to the panel.
 
-```sh
-mxmms
-```
-
-The shown window is a button, so you can click it to play/pause.
-
-When you click it with the right button, a menu pops up and
-you can change music or playlist, or seek.
-
-For seek, seekbar is shown, and you can seek with it.
-When you completed, the seekbar disappears when you click outside the app.
-
-The following options are available:
-
- - --geometry &lt;position&gt;
- - --width &lt;width&gt;
- - --height &lt;height&gt;
- - --autostart
-
-## Other Settings
-
-mxmms reads and executes ~/.mxmms/rc.rb, so you can do a few configuration.
-
-Configure playlist format:
-
-```ruby
-class Config
-  def music_list_handler(pos, id, artist, title)
-    "#{pos + 1}. #{artist} - #{title}"
-  end
-end
-```
-
-Configure strings on the main button.
-
-```ruby
-class Config
-  def main_title_handler(pos, id, artist, title)
-    "#{artist} - #{title}"
-  end
-end
-```
-
-These two methods accept arguments:
-
- - pos: position in the playlist. 0 for first music.
- - id: music id.
- - artist: artist or nil.
- - title: music title or nil.
-
-Configure repeat mode.
-
-```ruby
-GLib::Timeout.add(2000) do
-  @backend.set_repeat_mode :all
-  false
-end
-```
-
-You can pass one of :none, :one, and :all.
-I'm sorry for the timing issue.
+The shown applet is a button, so you can click it to play/pause.
 
 ## License
 

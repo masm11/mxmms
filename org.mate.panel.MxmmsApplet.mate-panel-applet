@@ -1,0 +1,9 @@
+[Applet Factory]
+Id=MxmmsAppletFactory
+InProcess=false
+Name=Mxmms Applet Factory
+Description=Mxmms Applet Factory
+
+[MxmmsApplet]
+Name=Mxmms Applet
+Description=Masm's XMMS2 Applet

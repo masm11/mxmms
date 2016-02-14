@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <gtk/gtk.h>
 #include <mate-panel-applet.h>
 #include <xmmsclient/xmmsclient.h>
@@ -242,7 +243,10 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
     w->timer = g_timeout_add(50, timer, w);
     
     w->conn = xmmsc_init("Mxmms");
-    xmmsc_connect(w->conn, NULL);
+    if (!xmmsc_connect(w->conn, NULL)) {
+	system("xmms2-launcher");
+	xmmsc_connect(w->conn, NULL);
+    }
     xmmsc_mainloop_gmain_init(w->conn);
     
     xmmsc_result_t *res;

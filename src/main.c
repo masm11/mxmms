@@ -187,11 +187,19 @@ static int playlist_music_changed(xmmsv_t *val, void *user_data)
 	    && xmmsv_dict_entry_get_string(val, "name", &name)) {
 	printf("%s:%d\n", name, pos);
 	
+	gboolean load_need = (strcmp(w->last_playlist_name, name) != 0);
+	
 	g_free(w->last_playlist_name);
 	w->last_playlist_name = g_strdup(name);
 	w->last_pos = pos;
 	
-	// fixme: 必要なら playlist を取得。
+	if (load_need) {
+	    /* 要らないと思うけど、
+	     * せっかくどの playlist かまで返答をくれてるので、
+	     * 一応違ったら取り寄せる、ってことで。
+	     */
+	    playlist_get(w->conn, w->last_playlist_name, playlist_renew, w);
+	}
     }
     
     return TRUE;
@@ -335,6 +343,7 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
     gtk_widget_show(GTK_WIDGET(w->applet));
     
     w->timer = g_timeout_add(50, timer, w);
+    w->last_playlist_name = g_strdup("");
     
     w->conn = xmmsc_init("Mxmms");
     if (!xmmsc_connect(w->conn, NULL)) {
@@ -351,14 +360,14 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
     res = xmmsc_broadcast_playback_current_id(w->conn);
     xmmsc_result_notifier_set(res, playback_current_id_changed, w);
     xmmsc_result_unref(res);
-    res = xmmsc_signal_playback_playtime(w->conn);
-    xmmsc_result_notifier_set(res, playback_playtime_changed, w);
-    xmmsc_result_unref(res);
     res = xmmsc_broadcast_playlist_current_pos(w->conn);
     xmmsc_result_notifier_set(res, playlist_music_changed, w);
     xmmsc_result_unref(res);
     res = xmmsc_broadcast_playlist_loaded(w->conn);
     xmmsc_result_notifier_set(res, playlist_list_loaded, w);
+    xmmsc_result_unref(res);
+    res = xmmsc_signal_playback_playtime(w->conn);
+    xmmsc_result_notifier_set(res, playback_playtime_changed, w);
     xmmsc_result_unref(res);
     
     res = xmmsc_playback_status(w->conn);

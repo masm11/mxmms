@@ -357,6 +357,9 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
     res = xmmsc_broadcast_playlist_current_pos(w->conn);
     xmmsc_result_notifier_set(res, playlist_music_changed, w);
     xmmsc_result_unref(res);
+    res = xmmsc_broadcast_playlist_loaded(w->conn);
+    xmmsc_result_notifier_set(res, playlist_list_loaded, w);
+    xmmsc_result_unref(res);
     
     res = xmmsc_playback_status(w->conn);
     xmmsc_result_notifier_set(res, playback_status_changed, w);

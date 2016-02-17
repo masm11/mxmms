@@ -246,7 +246,7 @@ static gboolean timer(gpointer user_data)
     struct work_t *w = user_data;
     
     if (--w->title_x < -gtk_widget_get_allocated_width(w->title))
-	w->title_x = w->size;
+	w->title_x = gtk_widget_get_allocated_width(w->layout);;
     
     GtkLayout *layout = GTK_LAYOUT(w->layout);
     

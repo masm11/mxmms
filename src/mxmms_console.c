@@ -41,6 +41,16 @@ static void mxmms_console_size_allocate   (GtkWidget        *widget,
 					   GtkAllocation    *allocation);
 static gboolean timer(gpointer user_data)
 {
+    MxmmsConsole *cons = user_data;
+    MxmmsConsolePrivate *priv = cons->priv;
+    
+    priv->title_x--;
+    if (priv->title_x < -gtk_widget_get_allocated_width(priv->title))
+	priv->title_x = gtk_widget_get_allocated_width(GTK_WIDGET(cons));
+    
+    gtk_layout_move(GTK_LAYOUT(priv->layout), priv->title, priv->title_x, 0);
+    
+    return TRUE;
 }
 
 G_GNUC_BEGIN_IGNORE_DEPRECATIONS
@@ -226,6 +236,10 @@ static void mxmms_console_size_allocate   (GtkWidget        *widget,
 {
     GTK_WIDGET_CLASS(mxmms_console_parent_class)->size_allocate(widget, allocation);
     
+    gint x, y, w, h;
+    
+    
+    
     // fixme: 配置。
 }
 
@@ -273,11 +287,18 @@ void mxmms_console_set_playtime(MxmmsConsole *cons, gint64 msec)
 {
     MxmmsConsolePrivate *priv = cons->priv;
     
+#if 0
     if (priv->playtime_msec == msec)
 	return;
+#endif
     
     gint sec = msec / 1000;
     gchar buf[16];
     g_snprintf(buf, sizeof buf, "%d:%02d", sec / 60, sec % 60);
     gtk_label_set_text(GTK_LABEL(priv->playtime), buf);
+}
+
+GtkWidget *mxmms_console_new(void)
+{
+    return g_object_new(MXMMS_TYPE_CONSOLE, NULL);
 }

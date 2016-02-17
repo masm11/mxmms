@@ -11,9 +11,7 @@ static struct work_t {
     guint size;
     
     MatePanelApplet *applet;
-    GtkWidget *obox;
     GtkWidget *button;
-    GtkWidget *vbox, *hbox;
     GtkWidget *layout;
     GtkWidget *title;
     GtkWidget *status;
@@ -250,7 +248,17 @@ static gboolean timer(gpointer user_data)
     if (--w->title_x < -gtk_widget_get_allocated_width(w->title))
 	w->title_x = w->size;
     
-    gtk_layout_move(GTK_LAYOUT(w->layout), w->title, w->title_x, 0);
+    GtkLayout *layout = GTK_LAYOUT(w->layout);
+    
+    gtk_layout_move(layout, w->title, w->title_x, 0);
+    
+    gtk_layout_move(layout, w->playtime,
+	    0,
+	    gtk_widget_get_allocated_height(w->layout) - gtk_widget_get_allocated_height(w->playtime));
+    
+    gtk_layout_move(layout, w->status,
+	    gtk_widget_get_allocated_width(w->layout) - gtk_widget_get_allocated_width(w->status),
+	    gtk_widget_get_allocated_height(w->layout) - gtk_widget_get_allocated_height(w->status));
     
     return G_SOURCE_CONTINUE;
 }
@@ -304,41 +312,28 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
     
     w->title_x = w->size;
     
-    // fixme: 入り切らないみたい… 後で調整しよう。
-    
-    w->obox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_show(w->obox);
-    gtk_container_add(GTK_CONTAINER(w->applet), w->obox);
-    
     w->button = gtk_button_new();
-    gtk_widget_set_size_request(w->button, w->size, 56);
+    gtk_widget_set_size_request(w->button, w->size, 48);
+    gtk_container_add(GTK_CONTAINER(applet), w->button);
+    gtk_container_set_border_width(GTK_CONTAINER(w->button), 0);
     gtk_widget_show(w->button);
-    gtk_box_pack_start(GTK_BOX(w->obox), w->button, TRUE, TRUE, 0);
     g_signal_connect(w->button, "clicked", G_CALLBACK(clicked), w);
     
-    w->vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_show(w->vbox);
-    gtk_container_add(GTK_CONTAINER(w->button), w->vbox);
-    
     w->layout = gtk_layout_new(NULL, NULL);
+    gtk_container_add(GTK_CONTAINER(w->button), w->layout);
     gtk_widget_show(w->layout);
-    gtk_box_pack_start(GTK_BOX(w->vbox), w->layout, TRUE, TRUE, 0);
     
     w->title = gtk_label_new("");
-    gtk_widget_show(w->title);
     gtk_layout_put(GTK_LAYOUT(w->layout), w->title, 0, 0);
-    
-    w->hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_show(w->hbox);
-    gtk_box_pack_end(GTK_BOX(w->vbox), w->hbox, FALSE, FALSE, 0);
+    gtk_widget_show(w->title);
     
     w->playtime = gtk_label_new("");
+    gtk_layout_put(GTK_LAYOUT(w->layout), w->playtime, 0, 0);
     gtk_widget_show(w->playtime);
-    gtk_box_pack_start(GTK_BOX(w->hbox), w->playtime, FALSE, FALSE, 0);
     
     w->status = gtk_image_new_from_icon_name("gtk-media-stop", GTK_ICON_SIZE_SMALL_TOOLBAR);
+    gtk_layout_put(GTK_LAYOUT(w->layout), w->status, 0, 0);
     gtk_widget_show(w->status);
-    gtk_box_pack_end(GTK_BOX(w->hbox), w->status, FALSE, FALSE, 0);
     
     gtk_widget_show(GTK_WIDGET(w->applet));
     

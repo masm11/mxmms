@@ -53,15 +53,6 @@ static int playback_status_changed(xmmsv_t *val, void *user_data)
 		    "gtk-media-pause", GTK_ICON_SIZE_SMALL_TOOLBAR);
 	    break;
 	}
-	
-/*
-	// fixme: これじゃうまくいかん。
-	guint w1 = gtk_widget_get_allocated_width(w->layout);
-	guint w2 = gtk_widget_get_allocated_width(w->status);
-	guint h1 = gtk_widget_get_allocated_height(w->layout);
-	guint h2 = gtk_widget_get_allocated_height(w->status);
-	gtk_layout_move(GTK_LAYOUT(w->layout), w->status, w1 - w2, h1 - h2);
-*/
     }
     
     return TRUE;
@@ -134,12 +125,6 @@ static int playback_playtime_changed(xmmsv_t *val, void *user_data)
 	r = r / 1000;
 	gchar *buf = g_strdup_printf("%d:%02d", r / 60, r % 60);
 	gtk_label_set_text(GTK_LABEL(w->playtime), buf);
-	
-/*
-	guint h1 = gtk_widget_get_allocated_height(w->layout);
-	guint h2 = gtk_widget_get_allocated_height(w->playtime);
-	gtk_layout_move(GTK_LAYOUT(w->layout), w->playtime, 0, h1 - h2);
-*/
 	
 	g_free(buf);
     }
@@ -358,22 +343,28 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
     
     xmmsc_result_t *res;
     
+    // play/pause/stop の状態が変化
     res = xmmsc_broadcast_playback_status(w->conn);
     xmmsc_result_notifier_set(res, playback_status_changed, w);
     xmmsc_result_unref(res);
+    // 再生中の曲 ID が変わった
     res = xmmsc_broadcast_playback_current_id(w->conn);
     xmmsc_result_notifier_set(res, playback_current_id_changed, w);
     xmmsc_result_unref(res);
+    // playlist 中の番号が変わった
     res = xmmsc_broadcast_playlist_current_pos(w->conn);
     xmmsc_result_notifier_set(res, playlist_music_changed, w);
     xmmsc_result_unref(res);
+    // playlist が切り替わった
     res = xmmsc_broadcast_playlist_loaded(w->conn);
     xmmsc_result_notifier_set(res, playlist_list_loaded, w);
     xmmsc_result_unref(res);
+    // 再生時間が変わった
     res = xmmsc_signal_playback_playtime(w->conn);
     xmmsc_result_notifier_set(res, playback_playtime_changed, w);
     xmmsc_result_unref(res);
     
+    // ここから先は、現在の状態の取得
     res = xmmsc_playback_status(w->conn);
     xmmsc_result_notifier_set(res, playback_status_changed, w);
     xmmsc_result_unref(res);

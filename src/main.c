@@ -155,9 +155,18 @@ static void playlist_renew(GList *list, gint64 stamp, void *user_data)
 	return;
     }
     
-    // fixme: w->last_playlist を解放。
+    GList *old_list = w->last_playlist;
     w->last_playlist_stamp = stamp;
     w->last_playlist = list;	// リストそのものをもらう。
+    
+    // 古いリストを解放
+    void free_music(gpointer data) {
+	struct music_t *mp = data;
+	g_free(mp->artist);
+	g_free(mp->title);
+	g_free(mp);
+    }
+    g_list_free_full(old_list, free_music);
     
     // とりあえず出力してみる。
     GList *p;

@@ -17,6 +17,8 @@ static struct work_t {
     GtkWidget *status;
     GtkWidget *playtime;
     
+    GtkActionGroup *agrp;
+    
     guint timer;
     
     xmmsc_connection_t *conn;	// xmms2d への接続
@@ -268,41 +270,33 @@ static void about(GtkAction *action, gpointer data)
 	    NULL);
 }
 
-static void setup_menu(struct work_t *w)
-{
-    GSList *group = NULL;
-    
-    
-    GtkRadioAction *action = NULL;
-    
-    
-    
-    
-}
-
 static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer user_data)
 {
     struct work_t *w = &work;
     w->applet = applet;
     
     static const char *xml =
-	    "<menu name=\"Playlist\" action=\"ShowMxmmsPlaylist\">"
-	    "<menuitem name=\"About2\" action=\"ShowMxmmsAbout\"/>"
-	    "</menu>"
-	    "<menuitem name=\"About1\" action=\"ShowMxmmsAbout\" />";
+	    "<menuitem name=\"Seek\" action=\"MxmmsSeek\"/>"
+	    "<menuitem name=\"Next\" action=\"MxmmsNext\"/>"
+	    "<menuitem name=\"Previous\" action=\"MxmmsPrevious\"/>"
+	    "<menuitem name=\"Musics\" action=\"MxmmsShowMusiclist\"/>"
+	    "<menuitem name=\"Playlists\" action=\"MxmmsShowPlaylists\"/>"
+	    "<separator/>"
+	    "<menuitem name=\"About\" action=\"MxmmsShowAbout\" />";
     
     static const GtkActionEntry actions[] = {
-	{ "ShowMxmmsPlaylist", NULL, "Playlist", NULL, NULL, NULL },
-	{ "ShowMxmmsAbout", GTK_STOCK_ABOUT, "About", NULL, NULL, G_CALLBACK(about) },
-	// { "ShowMxmmsHelp", GTK_STOCK_HELP, "Help", NULL, NULL, G_CALLBACK(help) },
+	{ "MxmmsSeek",          NULL, "Seek",       NULL, NULL, NULL },
+	{ "MxmmsNext",          NULL, "Next",       NULL, NULL, NULL },
+	{ "MxmmsPrevious",      NULL, "Previous",   NULL, NULL, NULL },
+	{ "MxmmsShowMusiclist", NULL, "Musiclist",  NULL, NULL, NULL },
+	{ "MxmmsShowPlaylists", NULL, "Playlists",  NULL, NULL, NULL },
+	{ "MxmmsShowAbout", GTK_STOCK_ABOUT, "About", NULL, NULL, G_CALLBACK(about) },
     };
     
-    GtkActionGroup *agrp;
+    w->agrp = gtk_action_group_new("Mxmms Applet Actions");
+    gtk_action_group_add_actions(w->agrp, actions, sizeof actions / sizeof actions[0], NULL);
     
-    agrp = gtk_action_group_new("Mxmms Applet Actions");
-    gtk_action_group_add_actions(agrp, actions, sizeof actions / sizeof actions[0], NULL);
-    
-    mate_panel_applet_setup_menu(MATE_PANEL_APPLET(applet), xml, agrp);
+    mate_panel_applet_setup_menu(MATE_PANEL_APPLET(applet), xml, w->agrp);
     
     w->title_x = w->size;
     

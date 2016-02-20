@@ -39,9 +39,11 @@ static struct work_t {
     gint64 last_playlist_stamp;	// 現在の playlist を取得開始した時刻
     gint last_pos;		// playlist 中、現在再生中の曲番号 0..
     gint64 last_playtime;	// 現在の再生時間(msec)
+    gint64 last_duration;	// 現在の曲の長さ(msec)
     
     GtkListStore *title_store;
     
+    GtkAdjustment *seekbar_adj;
 } work = {
     0,
     100,
@@ -114,6 +116,11 @@ static int playback_title_got(xmmsv_t *val, void *user_data)
     else
 	g_snprintf(buf, sizeof buf, "%s", title);
     
+    if (xmmsv_dict_get(val, "duration", &dict)) {
+	xmmsv_dict_foreach(dict, getting_int64, &w->last_duration);
+	gtk_adjustment_set_upper(w->seekbar_adj, w->last_duration);
+    }
+    
     gtk_label_set_text(GTK_LABEL(w->title), buf);
     
     w->title_x = w->size;
@@ -148,6 +155,8 @@ static int playback_playtime_changed(xmmsv_t *val, void *user_data)
 	gtk_label_set_text(GTK_LABEL(w->playtime), buf);
 	
 	g_free(buf);
+	
+	gtk_adjustment_set_value(w->seekbar_adj, w->last_playtime);
     }
     
     return TRUE;
@@ -359,6 +368,41 @@ static void menu_playlist_row_activated(GtkTreeView *view,
     xmmsc_result_unref(res);
 }
 
+static gchar *seekbar_format(GtkScale *scale, gdouble value)
+{
+    gint sec = value / 1000.0;
+    return g_strdup_printf("%d:%02d", sec / 60, sec % 60);
+}
+
+static gboolean seekbar_change(GtkRange *range,
+	GtkScrollType scroll, gdouble value, gpointer user_data)
+{
+    struct work_t *w = user_data;
+    
+    xmmsc_result_t *res;
+    res = xmmsc_playback_seek_ms(w->conn, value, XMMS_PLAYBACK_SEEK_SET);
+    xmmsc_result_unref(res);
+    
+    return TRUE;
+}
+
+static GtkWidget *create_seekbar_page(struct work_t *w)
+{
+    GtkWidget *frame = gtk_frame_new(NULL);
+    gtk_container_set_border_width(GTK_CONTAINER(frame), 20);
+    gtk_frame_set_shadow_type(GTK_FRAME(frame), GTK_SHADOW_NONE);
+    gtk_widget_show(frame);
+    
+    GtkWidget *bar = gtk_scale_new(GTK_ORIENTATION_HORIZONTAL, w->seekbar_adj);
+    g_signal_connect(bar, "format-value", G_CALLBACK(seekbar_format), NULL);
+    // value-changed だとうまくいかない。
+    g_signal_connect(bar, "change-value", G_CALLBACK(seekbar_change), w);
+    gtk_container_add(GTK_CONTAINER(frame), bar);
+    gtk_widget_show(bar);
+    
+    return frame;
+}
+
 static GtkWidget *create_title_list_page(struct work_t *w)
 {
     GtkWidget *scr = gtk_scrolled_window_new(NULL, NULL);
@@ -414,6 +458,8 @@ static void menu_controller(GtkWidget *ww, gpointer user_data)
     gtk_container_set_border_width(GTK_BOX(content), 10);
     gtk_widget_show(notebook);
     
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
+	    create_seekbar_page(w), gtk_label_new("Seek Bar"));
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
 	    create_title_list_page(w), gtk_label_new("Title List"));
     
@@ -534,6 +580,9 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
 	    G_TYPE_FLOAT,
 	    G_TYPE_STRING,
 	    G_TYPE_POINTER);
+    
+    w->seekbar_adj = gtk_adjustment_new(0, 0, 1, 0, 0, 0);
+    g_object_ref(w->seekbar_adj);
     
     
     

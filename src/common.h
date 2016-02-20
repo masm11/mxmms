@@ -12,4 +12,7 @@ void print_xmmsv(xmmsv_t *val, int indent);
 void playlist_get(xmmsc_connection_t *conn, const gchar *name,
 	void (*callback)(GList *, gint64, void *), void *user_data);
 
+void playlists_get(xmmsc_connection_t *conn,
+	void (*callback)(GList *, gint64, void *), void *user_data);
+
 #endif	/* ifndef COMMON_H_INCLUDED */

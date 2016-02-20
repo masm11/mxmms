@@ -17,6 +17,12 @@ enum {
     COL_NR
 };
 
+enum {
+    COL0_NOW,
+    COL0_NAME,
+    COL0_NR
+};
+
 static struct work_t {
     gint title_x;
     guint size;
@@ -31,6 +37,7 @@ static struct work_t {
     GtkActionGroup *agrp;
     
     guint timer;
+    guint timer_pl;
     
     xmmsc_connection_t *conn;	// xmms2d への接続
     int last_status;		// 現在の status。play/pause/stop
@@ -40,8 +47,11 @@ static struct work_t {
     gint last_pos;		// playlist 中、現在再生中の曲番号 0..
     gint64 last_playtime;	// 現在の再生時間(msec)
     gint64 last_duration;	// 現在の曲の長さ(msec)
+    GList *last_playlists;	// 現在の playlist の list
+    gint64 last_playlists_stamp;// 現在の playlist の list を取得開始した時刻
     
     GtkListStore *title_store;
+    GtkListStore *plist_store;
     
     GtkAdjustment *seekbar_adj;
 } work = {
@@ -51,6 +61,8 @@ static struct work_t {
 
 static void title_store_renew(struct work_t *w);
 static void title_store_update_now(struct work_t *w);
+static void plist_store_renew(struct work_t *w);
+static void plist_store_update_now(struct work_t *w);
 
 /****************/
 
@@ -164,9 +176,17 @@ static int playback_playtime_changed(xmmsv_t *val, void *user_data)
 
 static void playlist_renew(GList *list, gint64 stamp, void *user_data)
 {
+    void free_music(gpointer data) {
+	struct music_t *mp = data;
+	g_free(mp->artist);
+	g_free(mp->title);
+	g_free(mp);
+    }
+    
     struct work_t *w = user_data;
     if (w->last_playlist_stamp > stamp) {
 	// 古いのが来た。
+	g_list_free_full(list, free_music);
 	return;
     }
     
@@ -175,12 +195,6 @@ static void playlist_renew(GList *list, gint64 stamp, void *user_data)
     w->last_playlist = list;	// リストそのものをもらう。
     
     // 古いリストを解放
-    void free_music(gpointer data) {
-	struct music_t *mp = data;
-	g_free(mp->artist);
-	g_free(mp->title);
-	g_free(mp);
-    }
     g_list_free_full(old_list, free_music);
     
     // とりあえず出力してみる。
@@ -218,6 +232,7 @@ static int playlist_music_changed(xmmsv_t *val, void *user_data)
 	w->last_playlist_name = g_strdup(name);
 	w->last_pos = pos;
 	title_store_update_now(w);
+	plist_store_update_now(w);
 	
 	/* 現在のプレイリストと、そのプレイリスト中での現在の位置が得られる。
 	 * プレイリストを切り替えると、プレイリストは切り替わるが、
@@ -248,6 +263,8 @@ static int playlist_list_loaded(xmmsv_t *val, void *user_data)
     if (xmmsv_get_string(val, &r)) {
 	g_free(w->last_playlist_name);
 	w->last_playlist_name = g_strdup(r);
+	
+	plist_store_update_now(w);
 	
 	/* 現在の曲番号を得るにはプレイリスト名を渡さないといけない。
 	 * 理由が解らないが、そうすると、ここで得るのが良いのかな。
@@ -443,11 +460,53 @@ static GtkWidget *create_title_list_page(struct work_t *w)
     return scr;
 }
 
+static void menu_playlists_row_activated(GtkTreeView *view,
+	GtkTreePath *path, GtkTreeViewColumn *column, gpointer user_data)
+{
+    struct work_t *w = user_data;
+    GtkTreeIter iter;
+    if (!gtk_tree_model_get_iter(GTK_TREE_MODEL(w->plist_store), &iter, path))
+	return;
+    const gchar *name;
+    gtk_tree_model_get(GTK_TREE_MODEL(w->plist_store), &iter,
+	    COL0_NAME, &name, -1);
+    
+    xmmsc_result_t *res;
+    res = xmmsc_playlist_load(w->conn, name);
+    xmmsc_result_notifier_set(res, playlist_play, w);	// fixme: 要るか?
+    xmmsc_result_unref(res);
+}
+
 static GtkWidget *create_playlist_list_page(struct work_t *w)
 {
-    GtkWidget *label = gtk_label_new("Under construction...");
-    gtk_widget_show(label);
-    return label;
+    GtkWidget *scr = gtk_scrolled_window_new(NULL, NULL);
+    gtk_widget_show(scr);
+    
+    GtkWidget *view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(w->plist_store));
+    g_signal_connect(view, "row-activated", G_CALLBACK(menu_playlists_row_activated), w);
+    
+    GtkCellRenderer *renderer;
+    GtkTreeViewColumn *column;
+    
+    renderer = gtk_cell_renderer_toggle_new();
+    gtk_cell_renderer_toggle_set_radio(GTK_CELL_RENDERER_TOGGLE(renderer), true);
+    column = gtk_tree_view_column_new_with_attributes(
+	    "", renderer,
+	    "active", COL0_NOW,
+	    NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(view), column);
+    
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes(
+	    "Playlist Name", renderer,
+	    "text", COL0_NAME,
+	    NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(view), column);
+    
+    gtk_container_add(GTK_CONTAINER(scr), view);
+    gtk_widget_show(view);
+    
+    return scr;
 }
 
 static void menu_controller(GtkWidget *ww, gpointer user_data)
@@ -462,7 +521,7 @@ static void menu_controller(GtkWidget *ww, gpointer user_data)
     
     GtkWidget *notebook = gtk_notebook_new();
     gtk_box_pack_start(GTK_BOX(content), notebook, TRUE, TRUE, 0);
-    gtk_container_set_border_width(GTK_BOX(content), 10);
+    gtk_container_set_border_width(GTK_CONTAINER(content), 10);
     gtk_widget_show(notebook);
     
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
@@ -493,6 +552,88 @@ static void clicked(GtkButton *button, gpointer user_data)
 	xmmsc_result_unref(res);
 	break;
     }
+}
+
+static void plist_store_renew(struct work_t *w)
+{
+    while (TRUE) {
+	GtkTreeIter iter;
+	if (!gtk_tree_model_get_iter_first(GTK_TREE_MODEL(w->plist_store), &iter))
+	    break;
+	gtk_list_store_remove(w->plist_store, &iter);
+    }
+    
+    for (GList *lp = w->last_playlists; lp != NULL; lp = g_list_next(lp)) {
+	GtkTreeIter iter;
+	gtk_list_store_append(w->plist_store, &iter);
+	gtk_list_store_set(w->plist_store, &iter,
+		COL0_NOW, FALSE,
+		COL0_NAME, lp->data,
+		-1);
+    }
+}
+
+static void plist_store_update_now(struct work_t *w)
+{
+    GtkTreeIter iter;
+    if (!gtk_tree_model_get_iter_first(GTK_TREE_MODEL(w->plist_store), &iter))
+	return;
+    do {
+	const gchar *name;
+	gtk_tree_model_get(GTK_TREE_MODEL(w->plist_store), &iter,
+		COL0_NAME, &name, -1);
+	gtk_list_store_set(w->plist_store, &iter,
+		COL0_NOW, strcmp(name, w->last_playlist_name) == 0, -1);
+    } while (gtk_tree_model_iter_next(GTK_TREE_MODEL(w->plist_store), &iter));
+}
+
+static void playlists_got(GList *list, gint64 stamp, void *user_data)
+{
+    struct work_t *w = user_data;
+    
+    if (w->last_playlists_stamp > stamp) {
+	g_list_free_full(list, g_free);
+	return;
+    }
+    
+    GList *lp1, *lp2;
+    for (lp1 = list, lp2 = w->last_playlists;
+	 lp1 != NULL && lp2 != NULL; lp1 = g_list_next(lp1), lp2 = g_list_next(lp2)) {
+	const gchar *p1 = lp1->data;
+	const gchar *p2 = lp2->data;
+	if (strcmp(p1, p2) != 0)
+	    break;
+    }
+    
+    if (lp1 == NULL && lp2 == NULL) {
+	// リストが変わってない
+	g_list_free_full(list, g_free);
+	return;
+    }
+    
+    GList *old_list = w->last_playlists;
+    w->last_playlists = list;
+    w->last_playlists_stamp = stamp;
+    
+    g_list_free_full(old_list, g_free);
+    
+    printf("New List of Playlists\n");
+#if 0
+    for (GList *lp = w->last_playlists; lp != NULL; lp = g_list_next(lp))
+	printf("%s\n", lp->data);
+#endif
+    
+    plist_store_renew(w);
+    plist_store_update_now(w);
+}
+
+static gboolean timer_playlists(gpointer user_data)
+{
+    struct work_t *w = user_data;
+    
+    playlists_get(w->conn, playlists_got, w);
+    
+    return TRUE;
 }
 
 static gboolean timer(gpointer user_data)
@@ -580,6 +721,7 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
     gtk_widget_show(GTK_WIDGET(w->applet));
     
     w->timer = g_timeout_add(50, timer, w);
+    w->timer_pl = g_timeout_add(1000, timer_playlists, w);
     w->last_playlist_name = g_strdup("");
     
     w->title_store = gtk_list_store_new(COL_NR,
@@ -589,6 +731,9 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
 	    G_TYPE_FLOAT,
 	    G_TYPE_STRING,
 	    G_TYPE_POINTER);
+    w->plist_store = gtk_list_store_new(COL0_NR,
+	    G_TYPE_BOOLEAN,
+	    G_TYPE_STRING);
     
     w->seekbar_adj = gtk_adjustment_new(0, 0, 1, 0, 0, 0);
     g_object_ref(w->seekbar_adj);

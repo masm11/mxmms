@@ -187,6 +187,13 @@ static int playlist_music_changed(xmmsv_t *val, void *user_data)
 	w->last_playlist_name = g_strdup(name);
 	w->last_pos = pos;
 	
+	/* 現在のプレイリストと、そのプレイリスト中での現在の位置が得られる。
+	 * プレイリストを切り替えると、プレイリストは切り替わるが、
+	 * 再生中の曲はそのまま。次に再生する曲から新しいプレイリストになる。
+	 * それまでの間、プレイリスト名は新しいもの、pos は -1 になるみたい。
+	 * …そうとも限らないみたいだが、プレイリスト名は新しいものには
+	 * なるようだ。
+	 */
 	if (load_need) {
 	    /* 要らないと思うけど、
 	     * せっかくどの playlist かまで返答をくれてるので、
@@ -210,6 +217,14 @@ static int playlist_list_loaded(xmmsv_t *val, void *user_data)
 	g_free(w->last_playlist_name);
 	w->last_playlist_name = g_strdup(r);
 	
+	/* 現在の曲番号を得るにはプレイリスト名を渡さないといけない。
+	 * 理由が解らないが、そうすると、ここで得るのが良いのかな。
+	 */
+	xmmsc_result_t *res;
+	res = xmmsc_playlist_current_pos(w->conn, w->last_playlist_name);
+	xmmsc_result_notifier_set(res, playlist_music_changed, w);
+	xmmsc_result_unref(res);
+	
 	playlist_get(w->conn, w->last_playlist_name, playlist_renew, w);
     }
     
@@ -217,6 +232,48 @@ static int playlist_list_loaded(xmmsv_t *val, void *user_data)
 }
 
 /****************************************************************/
+
+static gboolean playlist_play(xmmsv_t *val, void *user_data)
+{
+    struct work_t *w = user_data;
+    
+    xmmsc_result_t *res;
+    res = xmmsc_playback_tickle(w->conn);
+    xmmsc_result_unref(res);
+    
+    return TRUE;
+}
+
+static void menu_next(GtkWidget *ww, gpointer user_data)
+{
+    struct work_t *w = user_data;
+    gint  pos;
+    
+    pos = w->last_pos;
+    if (++pos >= g_list_length(w->last_playlist))
+	pos = 0;
+    
+    xmmsc_result_t *res;
+    res = xmmsc_playlist_set_next(w->conn, pos);
+    xmmsc_result_notifier_set(res, playlist_play, w);
+    xmmsc_result_unref(res);
+}
+
+static void menu_prev(GtkWidget *ww, gpointer user_data)
+{
+    struct work_t *w = user_data;
+    gint  pos;
+    
+    // fixme: 3秒ルール適用。
+    pos = w->last_pos;
+    if (--pos < 0)
+	pos = g_list_length(w->last_playlist) - 1;
+    
+    xmmsc_result_t *res;
+    res = xmmsc_playlist_set_next(w->conn, pos);
+    xmmsc_result_notifier_set(res, playlist_play, w);
+    xmmsc_result_unref(res);
+}
 
 static void clicked(GtkButton *button, gpointer user_data)
 {
@@ -286,15 +343,15 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
     
     static const GtkActionEntry actions[] = {
 	{ "MxmmsSeek",          NULL, "Seek",       NULL, NULL, NULL },
-	{ "MxmmsNext",          NULL, "Next",       NULL, NULL, NULL },
-	{ "MxmmsPrevious",      NULL, "Previous",   NULL, NULL, NULL },
-	{ "MxmmsShowMusiclist", NULL, "Musiclist",  NULL, NULL, NULL },
+	{ "MxmmsNext",          NULL, "Next",       NULL, NULL, G_CALLBACK(menu_next) },
+	{ "MxmmsPrevious",      NULL, "Previous",   NULL, NULL, G_CALLBACK(menu_prev) },
+	{ "MxmmsShowMusiclist", NULL, "Playlist",  NULL, NULL, NULL },
 	{ "MxmmsShowPlaylists", NULL, "Playlists",  NULL, NULL, NULL },
 	{ "MxmmsShowAbout", GTK_STOCK_ABOUT, "About", NULL, NULL, G_CALLBACK(about) },
     };
     
     w->agrp = gtk_action_group_new("Mxmms Applet Actions");
-    gtk_action_group_add_actions(w->agrp, actions, sizeof actions / sizeof actions[0], NULL);
+    gtk_action_group_add_actions(w->agrp, actions, sizeof actions / sizeof actions[0], w);
     
     mate_panel_applet_setup_menu(MATE_PANEL_APPLET(applet), xml, w->agrp);
     

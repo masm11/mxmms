@@ -6,6 +6,16 @@
 #include <xmmsclient/xmmsclient-glib.h>
 #include "common.h"
 
+enum {
+    COL_NOW,
+    COL_NUM,
+    COL_NO,
+    COL_XALIGN,
+    COL_TITLE,
+    COL_PTR,
+    COL_NR
+};
+
 static struct work_t {
     gint title_x;
     guint size;
@@ -28,10 +38,16 @@ static struct work_t {
     gint64 last_playlist_stamp;	// 現在の playlist を取得開始した時刻
     gint last_pos;		// playlist 中、現在再生中の曲番号 0..
     gint64 last_playtime;	// 現在の再生時間(msec)
+    
+    GtkListStore *title_store;
+    
 } work = {
     0,
     100,
 };
+
+static void title_store_renew(struct work_t *w);
+static void title_store_update_now(struct work_t *w);
 
 /****************/
 
@@ -163,6 +179,9 @@ static void playlist_renew(GList *list, gint64 stamp, void *user_data)
 	struct music_t *mp = p->data;
 	printf("%d: %s - %s\n", mp->id, mp->artist, mp->title);
     }
+    
+    title_store_renew(w);
+    title_store_update_now(w);
 }
 
 static int playlist_music_changed(xmmsv_t *val, void *user_data)
@@ -188,6 +207,7 @@ static int playlist_music_changed(xmmsv_t *val, void *user_data)
 	g_free(w->last_playlist_name);
 	w->last_playlist_name = g_strdup(name);
 	w->last_pos = pos;
+	title_store_update_now(w);
 	
 	/* 現在のプレイリストと、そのプレイリスト中での現在の位置が得られる。
 	 * プレイリストを切り替えると、プレイリストは切り替わるが、
@@ -235,6 +255,49 @@ static int playlist_list_loaded(xmmsv_t *val, void *user_data)
 
 /****************************************************************/
 
+/* title store を作り直す。*/
+static void title_store_renew(struct work_t *w)
+{
+    while (TRUE) {
+	GtkTreeIter iter;
+	if (!gtk_tree_model_get_iter_first(w->title_store, &iter))
+	    break;
+	gtk_list_store_remove(w->title_store, &iter);
+    }
+    
+    gint num = 0;
+    for (GList *lp = w->last_playlist; lp != NULL; lp = g_list_next(lp)) {
+	GtkTreeIter iter;
+	gtk_list_store_append(w->title_store, &iter);
+	gtk_list_store_set(w->title_store, &iter,
+		COL_NOW, FALSE,
+		COL_NUM, num,
+		COL_NO, num + 1,
+		COL_XALIGN, 1.0,
+		COL_TITLE, ((struct music_t *) lp->data)->title,
+		COL_PTR, lp->data,
+		-1);
+	num++;
+    }
+}
+
+/* radio button を更新する */
+static void title_store_update_now(struct work_t *w)
+{
+    GtkTreeIter iter;
+    if (!gtk_tree_model_get_iter_first(w->title_store, &iter))
+	return;
+    do {
+	gint num;
+	gtk_tree_model_get(w->title_store, &iter,
+		COL_NUM, &num, -1);
+	gtk_list_store_set(w->title_store, &iter,
+		COL_NOW, (num == w->last_pos), -1);
+    } while (gtk_tree_model_iter_next(w->title_store, &iter));
+}
+
+/****************************************************************/
+
 static gboolean playlist_play(xmmsv_t *val, void *user_data)
 {
     struct work_t *w = user_data;
@@ -276,6 +339,64 @@ static void menu_prev(GtkWidget *ww, gpointer user_data)
     res = xmmsc_playlist_set_next(w->conn, pos);
     xmmsc_result_notifier_set(res, playlist_play, w);
     xmmsc_result_unref(res);
+}
+
+static void menu_playlist_row_activated(GtkTreeView *view,
+	GtkTreePath *path, GtkTreeViewColumn *column, gpointer user_data)
+{
+    struct work_t *w = user_data;
+    GtkTreeIter iter;
+    if (!gtk_tree_model_get_iter(w->title_store, &iter, path))
+	return;
+    gint pos;
+    gtk_tree_model_get(w->title_store, &iter,
+	    COL_NUM, &pos, -1);
+    
+    xmmsc_result_t *res;
+    res = xmmsc_playlist_set_next(w->conn, pos);
+    xmmsc_result_notifier_set(res, playlist_play, w);
+    xmmsc_result_unref(res);
+}
+
+static void menu_playlist(GtkWidget *ww, gpointer user_data)
+{
+    struct work_t *w = user_data;
+    
+    GtkWidget *win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_widget_show(win);
+    
+    
+    GtkWidget *view = gtk_tree_view_new_with_model(w->title_store);
+    g_signal_connect(view, "row-activated", G_CALLBACK(menu_playlist_row_activated), w);
+    
+    GtkCellRenderer *renderer;
+    GtkTreeViewColumn *column;
+    
+    renderer = gtk_cell_renderer_toggle_new();
+    gtk_cell_renderer_toggle_set_radio(GTK_CELL_RENDERER_TOGGLE(renderer), true);
+    column = gtk_tree_view_column_new_with_attributes(
+	    "", renderer,
+	    "active", COL_NOW,
+	    NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(view), column);
+    
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes(
+	    "#", renderer,
+	    "xalign", COL_XALIGN,
+	    "text", COL_NO,
+	    NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(view), column);
+    
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes(
+	    "Title", renderer,
+	    "text", COL_TITLE,
+	    NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(view), column);
+    
+    gtk_container_add(GTK_CONTAINER(win), view);
+    gtk_widget_show(view);
 }
 
 static void clicked(GtkButton *button, gpointer user_data)
@@ -348,7 +469,7 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
 	{ "MxmmsSeek",          NULL, "Seek",       NULL, NULL, NULL },
 	{ "MxmmsNext",          NULL, "Next",       NULL, NULL, G_CALLBACK(menu_next) },
 	{ "MxmmsPrevious",      NULL, "Previous",   NULL, NULL, G_CALLBACK(menu_prev) },
-	{ "MxmmsShowMusiclist", NULL, "Playlist",  NULL, NULL, NULL },
+	{ "MxmmsShowMusiclist", NULL, "Playlist",  NULL, NULL, G_CALLBACK(menu_playlist) },
 	{ "MxmmsShowPlaylists", NULL, "Playlists",  NULL, NULL, NULL },
 	{ "MxmmsShowAbout", GTK_STOCK_ABOUT, "About", NULL, NULL, G_CALLBACK(about) },
     };
@@ -387,6 +508,16 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
     
     w->timer = g_timeout_add(50, timer, w);
     w->last_playlist_name = g_strdup("");
+    
+    w->title_store = gtk_list_store_new(COL_NR,
+	    G_TYPE_BOOLEAN,
+	    G_TYPE_INT,
+	    G_TYPE_INT,
+	    G_TYPE_FLOAT,
+	    G_TYPE_STRING,
+	    G_TYPE_POINTER);
+    
+    
     
     w->conn = xmmsc_init("Mxmms");
     if (!xmmsc_connect(w->conn, NULL)) {

@@ -359,15 +359,9 @@ static void menu_playlist_row_activated(GtkTreeView *view,
     xmmsc_result_unref(res);
 }
 
-static void menu_playlist(GtkWidget *ww, gpointer user_data)
+static GtkWidget *create_title_list_page(struct work_t *w)
 {
-    struct work_t *w = user_data;
-    
-    GtkWidget *win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_default_size(GTK_WINDOW(win), 300, 400);
-    
     GtkWidget *scr = gtk_scrolled_window_new(NULL, NULL);
-    gtk_container_add(GTK_CONTAINER(win), scr);
     gtk_widget_show(scr);
     
     GtkWidget *view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(w->title_store));
@@ -402,7 +396,29 @@ static void menu_playlist(GtkWidget *ww, gpointer user_data)
     gtk_container_add(GTK_CONTAINER(scr), view);
     gtk_widget_show(view);
     
-    gtk_widget_show(win);
+    return scr;
+}
+
+static void menu_controller(GtkWidget *ww, gpointer user_data)
+{
+    struct work_t *w = user_data;
+    
+    GtkWidget *win = gtk_dialog_new_with_buttons("Mxmms", NULL, GTK_DIALOG_MODAL,
+	    "Close", GTK_RESPONSE_CLOSE,
+	    NULL);
+    gtk_window_set_default_size(GTK_WINDOW(win), 600, 400);
+    GtkWidget *content = gtk_dialog_get_content_area(GTK_DIALOG(win));
+    
+    GtkWidget *notebook = gtk_notebook_new();
+    gtk_box_pack_start(GTK_BOX(content), notebook, TRUE, TRUE, 0);
+    gtk_container_set_border_width(GTK_BOX(content), 10);
+    gtk_widget_show(notebook);
+    
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
+	    create_title_list_page(w), gtk_label_new("Title List"));
+    
+    gtk_dialog_run(GTK_DIALOG(win));
+    gtk_widget_destroy(win);
 }
 
 static void clicked(GtkButton *button, gpointer user_data)
@@ -463,20 +479,16 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
     w->applet = applet;
     
     static const char *xml =
-	    "<menuitem name=\"Seek\" action=\"MxmmsSeek\"/>"
 	    "<menuitem name=\"Next\" action=\"MxmmsNext\"/>"
 	    "<menuitem name=\"Previous\" action=\"MxmmsPrevious\"/>"
-	    "<menuitem name=\"Musics\" action=\"MxmmsShowMusiclist\"/>"
-	    "<menuitem name=\"Playlists\" action=\"MxmmsShowPlaylists\"/>"
+	    "<menuitem name=\"Controller\" action=\"MxmmsShowController\"/>"
 	    "<separator/>"
 	    "<menuitem name=\"About\" action=\"MxmmsShowAbout\" />";
     
     static const GtkActionEntry actions[] = {
-	{ "MxmmsSeek",          NULL, "Seek",       NULL, NULL, NULL },
-	{ "MxmmsNext",          NULL, "Next",       NULL, NULL, G_CALLBACK(menu_next) },
-	{ "MxmmsPrevious",      NULL, "Previous",   NULL, NULL, G_CALLBACK(menu_prev) },
-	{ "MxmmsShowMusiclist", NULL, "Playlist",  NULL, NULL, G_CALLBACK(menu_playlist) },
-	{ "MxmmsShowPlaylists", NULL, "Playlists",  NULL, NULL, NULL },
+	{ "MxmmsNext",           NULL, "Next",       NULL, NULL, G_CALLBACK(menu_next) },
+	{ "MxmmsPrevious",       NULL, "Previous",   NULL, NULL, G_CALLBACK(menu_prev) },
+	{ "MxmmsShowController", NULL, "Others...",  NULL, NULL, G_CALLBACK(menu_controller) },
 	{ "MxmmsShowAbout", GTK_STOCK_ABOUT, "About", NULL, NULL, G_CALLBACK(about) },
     };
     

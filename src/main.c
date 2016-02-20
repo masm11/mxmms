@@ -364,8 +364,11 @@ static void menu_playlist(GtkWidget *ww, gpointer user_data)
     struct work_t *w = user_data;
     
     GtkWidget *win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_widget_show(win);
+    gtk_window_set_default_size(GTK_WINDOW(win), 300, 400);
     
+    GtkWidget *scr = gtk_scrolled_window_new(NULL, NULL);
+    gtk_container_add(GTK_CONTAINER(win), scr);
+    gtk_widget_show(scr);
     
     GtkWidget *view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(w->title_store));
     g_signal_connect(view, "row-activated", G_CALLBACK(menu_playlist_row_activated), w);
@@ -396,8 +399,10 @@ static void menu_playlist(GtkWidget *ww, gpointer user_data)
 	    NULL);
     gtk_tree_view_append_column(GTK_TREE_VIEW(view), column);
     
-    gtk_container_add(GTK_CONTAINER(win), view);
+    gtk_container_add(GTK_CONTAINER(scr), view);
     gtk_widget_show(view);
+    
+    gtk_widget_show(win);
 }
 
 static void clicked(GtkButton *button, gpointer user_data)

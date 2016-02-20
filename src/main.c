@@ -443,6 +443,13 @@ static GtkWidget *create_title_list_page(struct work_t *w)
     return scr;
 }
 
+static GtkWidget *create_playlist_list_page(struct work_t *w)
+{
+    GtkWidget *label = gtk_label_new("Under construction...");
+    gtk_widget_show(label);
+    return label;
+}
+
 static void menu_controller(GtkWidget *ww, gpointer user_data)
 {
     struct work_t *w = user_data;
@@ -462,6 +469,8 @@ static void menu_controller(GtkWidget *ww, gpointer user_data)
 	    create_seekbar_page(w), gtk_label_new("Seek Bar"));
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
 	    create_title_list_page(w), gtk_label_new("Title List"));
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
+	    create_playlist_list_page(w), gtk_label_new("Playlists"));
     
     gtk_dialog_run(GTK_DIALOG(win));
     gtk_widget_destroy(win);

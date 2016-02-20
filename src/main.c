@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <gtk/gtk.h>
 #include <mate-panel-applet.h>
 #include <xmmsclient/xmmsclient.h>
@@ -260,7 +261,7 @@ static void title_store_renew(struct work_t *w)
 {
     while (TRUE) {
 	GtkTreeIter iter;
-	if (!gtk_tree_model_get_iter_first(w->title_store, &iter))
+	if (!gtk_tree_model_get_iter_first(GTK_TREE_MODEL(w->title_store), &iter))
 	    break;
 	gtk_list_store_remove(w->title_store, &iter);
     }
@@ -285,15 +286,15 @@ static void title_store_renew(struct work_t *w)
 static void title_store_update_now(struct work_t *w)
 {
     GtkTreeIter iter;
-    if (!gtk_tree_model_get_iter_first(w->title_store, &iter))
+    if (!gtk_tree_model_get_iter_first(GTK_TREE_MODEL(w->title_store), &iter))
 	return;
     do {
 	gint num;
-	gtk_tree_model_get(w->title_store, &iter,
+	gtk_tree_model_get(GTK_TREE_MODEL(w->title_store), &iter,
 		COL_NUM, &num, -1);
 	gtk_list_store_set(w->title_store, &iter,
 		COL_NOW, (num == w->last_pos), -1);
-    } while (gtk_tree_model_iter_next(w->title_store, &iter));
+    } while (gtk_tree_model_iter_next(GTK_TREE_MODEL(w->title_store), &iter));
 }
 
 /****************************************************************/
@@ -346,10 +347,10 @@ static void menu_playlist_row_activated(GtkTreeView *view,
 {
     struct work_t *w = user_data;
     GtkTreeIter iter;
-    if (!gtk_tree_model_get_iter(w->title_store, &iter, path))
+    if (!gtk_tree_model_get_iter(GTK_TREE_MODEL(w->title_store), &iter, path))
 	return;
     gint pos;
-    gtk_tree_model_get(w->title_store, &iter,
+    gtk_tree_model_get(GTK_TREE_MODEL(w->title_store), &iter,
 	    COL_NUM, &pos, -1);
     
     xmmsc_result_t *res;
@@ -366,7 +367,7 @@ static void menu_playlist(GtkWidget *ww, gpointer user_data)
     gtk_widget_show(win);
     
     
-    GtkWidget *view = gtk_tree_view_new_with_model(w->title_store);
+    GtkWidget *view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(w->title_store));
     g_signal_connect(view, "row-activated", G_CALLBACK(menu_playlist_row_activated), w);
     
     GtkCellRenderer *renderer;

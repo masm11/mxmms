@@ -27,6 +27,7 @@ static struct work_t {
     GList *last_playlist;	// 現在の playlist の内容。struct music_t
     gint64 last_playlist_stamp;	// 現在の playlist を取得開始した時刻
     gint last_pos;		// playlist 中、現在再生中の曲番号 0..
+    gint64 last_playtime;	// 現在の再生時間(msec)
 } work = {
     0,
     100,
@@ -124,6 +125,7 @@ static int playback_playtime_changed(xmmsv_t *val, void *user_data)
     
     gint64 r;
     if (xmmsv_get_int64(val, &r)) {
+	w->last_playtime = r;
 	r = r / 1000;
 	gchar *buf = g_strdup_printf("%d:%02d", r / 60, r % 60);
 	gtk_label_set_text(GTK_LABEL(w->playtime), buf);
@@ -264,10 +266,11 @@ static void menu_prev(GtkWidget *ww, gpointer user_data)
     struct work_t *w = user_data;
     gint  pos;
     
-    // fixme: 3秒ルール適用。
     pos = w->last_pos;
-    if (--pos < 0)
-	pos = g_list_length(w->last_playlist) - 1;
+    if (w->last_playtime < 3000) {
+	if (--pos < 0)
+	    pos = g_list_length(w->last_playlist) - 1;
+    }
     
     xmmsc_result_t *res;
     res = xmmsc_playlist_set_next(w->conn, pos);

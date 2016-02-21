@@ -630,7 +630,7 @@ static gboolean timer_playlists(gpointer user_data)
     
     playlists_get(w->conn, playlists_got, w);
     
-    return TRUE;
+    return G_SOURCE_CONTINUE;
 }
 
 static gboolean timer(gpointer user_data)

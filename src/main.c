@@ -658,6 +658,12 @@ static gboolean timer(gpointer user_data)
     return G_SOURCE_CONTINUE;
 }
 
+static void change_size(MatePanelApplet *applet, gint size, gpointer user_data)
+{
+    struct work_t *w = user_data;
+    gtk_widget_set_size_request(w->button, w->size, size);
+}
+
 static void about(GtkAction *action, gpointer data)
 {
     gtk_show_about_dialog(NULL,
@@ -693,10 +699,12 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
     
     mate_panel_applet_setup_menu(MATE_PANEL_APPLET(applet), xml, w->agrp);
     
+    g_signal_connect(applet, "change_size", G_CALLBACK(change_size), w);
+    
     w->title_x = w->size;
     
     w->button = gtk_button_new();
-    gtk_widget_set_size_request(w->button, w->size, 48);
+    gtk_widget_set_size_request(w->button, w->size, mate_panel_applet_get_size(applet));
     gtk_container_add(GTK_CONTAINER(applet), w->button);
     gtk_container_set_border_width(GTK_CONTAINER(w->button), 0);
     gtk_widget_show(w->button);

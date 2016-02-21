@@ -672,6 +672,29 @@ static void about(GtkAction *action, gpointer data)
 	    NULL);
 }
 
+static void destroy(MatePanelApplet *applet, gpointer user_data)
+{
+    struct work_t *w = user_data;
+    
+    xmmsc_io_disconnect(w->conn);
+    g_object_unref(w->agrp);
+    g_source_remove(w->timer);
+    g_source_remove(w->timer_pl);
+    g_free(w->last_playlist_name);
+    void free_music(gpointer data) {
+	struct music_t *mp = data;
+	g_free(mp->artist);
+	g_free(mp->title);
+	g_free(mp);
+    }
+    g_list_free_full(w->last_playlist, free_music);
+    g_list_free_full(w->last_playlists, g_free);
+    g_object_unref(w->title_store);
+    g_object_unref(w->plist_store);
+    g_object_unref(w->seekbar_adj);
+    g_free(w);
+}
+
 static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer user_data)
 {
     struct work_t *w = g_new0(struct work_t, 1);
@@ -698,6 +721,7 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
     mate_panel_applet_setup_menu(MATE_PANEL_APPLET(applet), xml, w->agrp);
     
     g_signal_connect(applet, "change_size", G_CALLBACK(change_size), w);
+    g_signal_connect(applet, "destroy", G_CALLBACK(destroy), w);
     
     w->title_x = w->size;
     

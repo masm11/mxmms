@@ -39,6 +39,7 @@ static struct work_t {
     guint timer;
     guint timer_pl;
     
+    void *gmain_udata;
     xmmsc_connection_t *conn;	// xmms2d への接続
     int last_status;		// 現在の status。play/pause/stop
     gchar *last_playlist_name;	// 現在の playlist の名前
@@ -637,20 +638,45 @@ static gboolean timer(gpointer user_data)
 {
     struct work_t *w = user_data;
     
-    if (--w->title_x < -gtk_widget_get_allocated_width(w->title))
-	w->title_x = gtk_widget_get_allocated_width(w->layout);;
-    
     GtkLayout *layout = GTK_LAYOUT(w->layout);
     
-    gtk_layout_move(layout, w->title, w->title_x, 0);
-    
-    gtk_layout_move(layout, w->playtime,
-	    0,
-	    gtk_widget_get_allocated_height(w->layout) - gtk_widget_get_allocated_height(w->playtime));
-    
-    gtk_layout_move(layout, w->status,
-	    gtk_widget_get_allocated_width(w->layout) - gtk_widget_get_allocated_width(w->status),
-	    gtk_widget_get_allocated_height(w->layout) - gtk_widget_get_allocated_height(w->status));
+    switch (mate_panel_applet_get_orient(w->applet)) {
+    case MATE_PANEL_APPLET_ORIENT_UP:
+    case MATE_PANEL_APPLET_ORIENT_DOWN:
+	if (--w->title_x < -gtk_widget_get_allocated_width(w->title))
+	    w->title_x = gtk_widget_get_allocated_width(w->layout);;
+	
+	gtk_label_set_angle(GTK_LABEL(w->title), 0);
+	gtk_label_set_angle(GTK_LABEL(w->playtime), 0);
+	
+	gtk_layout_move(layout, w->title, w->title_x, 0);
+	gtk_layout_move(layout, w->playtime,
+		0,
+		gtk_widget_get_allocated_height(w->layout) - gtk_widget_get_allocated_height(w->playtime));
+	gtk_layout_move(layout, w->status,
+		gtk_widget_get_allocated_width(w->layout) - gtk_widget_get_allocated_width(w->status),
+		gtk_widget_get_allocated_height(w->layout) - gtk_widget_get_allocated_height(w->status));
+	break;
+	
+    case MATE_PANEL_APPLET_ORIENT_LEFT:
+    case MATE_PANEL_APPLET_ORIENT_RIGHT:
+	if (--w->title_x < -gtk_widget_get_allocated_height(w->title))
+	    w->title_x = gtk_widget_get_allocated_height(w->layout);
+	
+	gtk_label_set_angle(GTK_LABEL(w->title), 90);
+	gtk_label_set_angle(GTK_LABEL(w->playtime), 90);
+	
+	gtk_layout_move(layout, w->title,
+		0,
+		gtk_widget_get_allocated_height(w->layout) - w->title_x - gtk_widget_get_allocated_height(w->title));
+	gtk_layout_move(layout, w->playtime,
+		gtk_widget_get_allocated_width(w->layout) - gtk_widget_get_allocated_width(w->playtime),
+		gtk_widget_get_allocated_height(w->layout) - gtk_widget_get_allocated_height(w->playtime));
+	gtk_layout_move(layout, w->status,
+		gtk_widget_get_allocated_width(w->layout) - gtk_widget_get_allocated_width(w->status),
+		0);
+	break;
+    }
     
     return G_SOURCE_CONTINUE;
 }
@@ -676,7 +702,9 @@ static void destroy(MatePanelApplet *applet, gpointer user_data)
 {
     struct work_t *w = user_data;
     
+    xmmsc_mainloop_gmain_shutdown(w->conn, w->gmain_udata);
     xmmsc_io_disconnect(w->conn);
+    xmmsc_unref(w->conn);
     g_object_unref(w->agrp);
     g_source_remove(w->timer);
     g_source_remove(w->timer_pl);
@@ -726,7 +754,16 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
     w->title_x = w->size;
     
     w->button = gtk_button_new();
-    gtk_widget_set_size_request(w->button, w->size, mate_panel_applet_get_size(applet));
+    switch (mate_panel_applet_get_orient(applet)) {
+    case MATE_PANEL_APPLET_ORIENT_UP:
+    case MATE_PANEL_APPLET_ORIENT_DOWN:
+	gtk_widget_set_size_request(w->button, w->size, mate_panel_applet_get_size(applet));
+	break;
+    case MATE_PANEL_APPLET_ORIENT_LEFT:
+    case MATE_PANEL_APPLET_ORIENT_RIGHT:
+	gtk_widget_set_size_request(w->button, mate_panel_applet_get_size(applet), w->size);
+	break;
+    }
     gtk_container_add(GTK_CONTAINER(applet), w->button);
     gtk_container_set_border_width(GTK_CONTAINER(w->button), 0);
     gtk_widget_show(w->button);
@@ -775,7 +812,7 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
 	system("xmms2-launcher");
 	xmmsc_connect(w->conn, NULL);
     }
-    xmmsc_mainloop_gmain_init(w->conn);
+    w->gmain_udata = xmmsc_mainloop_gmain_init(w->conn);
     
     xmmsc_result_t *res;
     

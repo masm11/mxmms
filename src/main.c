@@ -33,6 +33,7 @@ static struct work_t {
     GtkWidget *title;
     GtkWidget *status;
     GtkWidget *playtime;
+    GtkWidget *dialog;
     
     GtkActionGroup *agrp;
     
@@ -507,15 +508,30 @@ static GtkWidget *create_playlist_list_page(struct work_t *w)
     return scr;
 }
 
+static void dialog_response(GtkWidget *ww, gint response, gpointer user_data)
+{
+    struct work_t *w = user_data;
+    printf("dialog_response\n");
+    gtk_widget_destroy(w->dialog);
+    w->dialog = NULL;
+}
+
 static void menu_controller(GtkWidget *ww, gpointer user_data)
 {
     struct work_t *w = user_data;
     
-    GtkWidget *win = gtk_dialog_new_with_buttons("Mxmms", NULL, GTK_DIALOG_MODAL,
+    if (w->dialog != NULL) {
+	printf("not null.\n");
+	return;
+    }
+    
+    w->dialog = gtk_dialog_new_with_buttons("Mxmms", NULL, 0,
 	    "Close", GTK_RESPONSE_CLOSE,
 	    NULL);
-    gtk_window_set_default_size(GTK_WINDOW(win), 600, 400);
-    GtkWidget *content = gtk_dialog_get_content_area(GTK_DIALOG(win));
+    // titlebar の x を押しても response が来る。
+    g_signal_connect(w->dialog, "response", G_CALLBACK(dialog_response), w);
+    gtk_window_set_default_size(GTK_WINDOW(w->dialog), 600, 400);
+    GtkWidget *content = gtk_dialog_get_content_area(GTK_DIALOG(w->dialog));
     
     GtkWidget *notebook = gtk_notebook_new();
     gtk_box_pack_start(GTK_BOX(content), notebook, TRUE, TRUE, 0);
@@ -529,8 +545,7 @@ static void menu_controller(GtkWidget *ww, gpointer user_data)
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
 	    create_playlist_list_page(w), gtk_label_new("Playlists"));
     
-    gtk_dialog_run(GTK_DIALOG(win));
-    gtk_widget_destroy(win);
+    gtk_widget_show(w->dialog);
 }
 
 static void clicked(GtkButton *button, gpointer user_data)
@@ -705,6 +720,8 @@ static void destroy(MatePanelApplet *applet, gpointer user_data)
     xmmsc_mainloop_gmain_shutdown(w->conn, w->gmain_udata);
     xmmsc_io_disconnect(w->conn);
     xmmsc_unref(w->conn);
+    if (w->dialog != NULL)
+	gtk_widget_destroy(w->dialog);
     g_object_unref(w->agrp);
     g_source_remove(w->timer);
     g_source_remove(w->timer_pl);

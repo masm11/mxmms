@@ -54,9 +54,6 @@ static struct work_t {
     GtkListStore *plist_store;
     
     GtkAdjustment *seekbar_adj;
-} work = {
-    0,
-    100,
 };
 
 static void title_store_renew(struct work_t *w);
@@ -677,8 +674,9 @@ static void about(GtkAction *action, gpointer data)
 
 static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer user_data)
 {
-    struct work_t *w = &work;
+    struct work_t *w = g_new0(struct work_t, 1);
     w->applet = applet;
+    w->size = 100;
     
     static const char *xml =
 	    "<menuitem name=\"Next\" action=\"MxmmsNext\"/>"

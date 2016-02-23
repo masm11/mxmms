@@ -23,7 +23,13 @@ enum {
     COL0_NR
 };
 
-static struct work_t {
+enum {
+    COL1_STATE,
+    COL1_KEY,
+    COL1_NR
+};
+
+struct work_t {
     gint title_x;
     guint size;
     
@@ -54,6 +60,7 @@ static struct work_t {
     
     GtkListStore *title_store;
     GtkListStore *plist_store;
+    GtkListStore *config_bool_store;
     
     GtkAdjustment *seekbar_adj;
 };
@@ -62,6 +69,8 @@ static void title_store_renew(struct work_t *w);
 static void title_store_update_now(struct work_t *w);
 static void plist_store_renew(struct work_t *w);
 static void plist_store_update_now(struct work_t *w);
+static void config_bool_update_state(struct work_t *w,
+	const gchar *key, gboolean value);
 
 /****************/
 
@@ -279,6 +288,52 @@ static int playlist_list_loaded(xmmsv_t *val, void *user_data)
     return TRUE;
 }
 
+static gboolean configval_repeat_all_got(xmmsv_t *val, void *user_data)
+{
+    struct work_t *w = user_data;
+    
+    printf("configval repeat_all got.\n");
+    print_xmmsv(val, 0);
+    
+    const gchar *str;
+    if (xmmsv_get_string(val, &str)) {
+	config_bool_update_state(w, "playlist.repeat_all", (strcmp(str, "0") != 0));
+    }
+    
+    return TRUE;
+}
+
+static gboolean configval_repeat_one_got(xmmsv_t *val, void *user_data)
+{
+    struct work_t *w = user_data;
+    
+    printf("configval repeat_one got.\n");
+    print_xmmsv(val, 0);
+    
+    const gchar *str;
+    if (xmmsv_get_string(val, &str)) {
+	config_bool_update_state(w, "playlist.repeat_one", (strcmp(str, "0") != 0));
+    }
+    
+    return TRUE;
+}
+
+static gboolean configval_changed(xmmsv_t *val, void *user_data)
+{
+    struct work_t *w = user_data;
+    
+    printf("configval changed.\n");
+    print_xmmsv(val, 0);
+    
+    xmmsv_t *v;
+    if (xmmsv_dict_get(val, "playlist.repeat_all", &v))
+	configval_repeat_all_got(v, user_data);
+    else if (xmmsv_dict_get(val, "playlist.repeat_one", &v))
+	configval_repeat_one_got(v, user_data);
+    
+    return TRUE;
+}
+
 /****************************************************************/
 
 /* title store を作り直す。*/
@@ -320,6 +375,32 @@ static void title_store_update_now(struct work_t *w)
 	gtk_list_store_set(w->title_store, &iter,
 		COL_NOW, (num == w->last_pos), -1);
     } while (gtk_tree_model_iter_next(GTK_TREE_MODEL(w->title_store), &iter));
+}
+
+static void config_bool_update_state(struct work_t *w,
+	const gchar *key, gboolean value)
+{
+    GtkTreeIter iter;
+    if (gtk_tree_model_get_iter_first(GTK_TREE_MODEL(w->config_bool_store), &iter)) {
+	do {
+	    const gchar *k;
+	    gtk_tree_model_get(GTK_TREE_MODEL(w->config_bool_store), &iter,
+		    COL1_KEY, &k, -1);
+	    if (strcmp(k, key) == 0) {
+		// key があったら、その record を更新。
+		gtk_list_store_set(w->config_bool_store, &iter,
+			COL1_STATE, value, -1);
+		return;
+	    }
+	} while (gtk_tree_model_iter_next(GTK_TREE_MODEL(w->config_bool_store), &iter));
+    }
+    
+    // key がなかったら追加。
+    gtk_list_store_append(w->config_bool_store, &iter);
+    gtk_list_store_set(w->config_bool_store, &iter,
+	    COL1_STATE, value,
+	    COL1_KEY, key,
+	    -1);
 }
 
 /****************************************************************/
@@ -508,6 +589,58 @@ static GtkWidget *create_playlist_list_page(struct work_t *w)
     return scr;
 }
 
+static void toggled(GtkCellRendererToggle *cell_renderer, gchar *path, gpointer user_data)
+{
+    struct work_t *w = user_data;
+    GtkTreeIter iter;
+    GtkTreePath *tpath;
+    tpath = gtk_tree_path_new_from_string(path);	// fixme: 破棄はどうする?
+    if (!gtk_tree_model_get_iter(GTK_TREE_MODEL(w->config_bool_store), &iter, tpath))
+	return;
+    const gchar *key;
+    gboolean val;
+    gtk_tree_model_get(GTK_TREE_MODEL(w->config_bool_store), &iter,
+	    COL1_KEY, &key,
+	    COL1_STATE, &val,
+	    -1);
+    
+    xmmsc_result_t *res;
+    res = xmmsc_config_set_value(w->conn, key, val ? "0" : "1");
+    xmmsc_result_unref(res);
+}
+
+static GtkWidget *create_server_config_page(struct work_t *w)
+{
+    GtkWidget *scr = gtk_scrolled_window_new(NULL, NULL);
+    gtk_widget_show(scr);
+    
+    GtkWidget *view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(w->config_bool_store));
+    // g_signal_connect(view, "row-activated", G_CALLBACK(menu_playlists_row_activated), w);
+    
+    GtkCellRenderer *renderer;
+    GtkTreeViewColumn *column;
+    
+    renderer = gtk_cell_renderer_toggle_new();
+    g_signal_connect(renderer, "toggled", G_CALLBACK(toggled), w);
+    column = gtk_tree_view_column_new_with_attributes(
+	    "", renderer,
+	    "active", COL1_STATE,
+	    NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(view), column);
+    
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes(
+	    "", renderer,
+	    "text", COL1_KEY,
+	    NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(view), column);
+    
+    gtk_container_add(GTK_CONTAINER(scr), view);
+    gtk_widget_show(view);
+    
+    return scr;
+}
+
 static void dialog_response(GtkWidget *ww, gint response, gpointer user_data)
 {
     struct work_t *w = user_data;
@@ -544,6 +677,8 @@ static void menu_controller(GtkWidget *ww, gpointer user_data)
 	    create_title_list_page(w), gtk_label_new("Title List"));
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
 	    create_playlist_list_page(w), gtk_label_new("Playlists"));
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
+	    create_server_config_page(w), gtk_label_new("Config"));
     
     gtk_widget_show(w->dialog);
 }
@@ -818,6 +953,9 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
     w->plist_store = gtk_list_store_new(COL0_NR,
 	    G_TYPE_BOOLEAN,
 	    G_TYPE_STRING);
+    w->config_bool_store = gtk_list_store_new(COL1_NR,
+	    G_TYPE_BOOLEAN,
+	    G_TYPE_STRING);
     
     w->seekbar_adj = gtk_adjustment_new(0, 0, 1, 0, 0, 0);
     g_object_ref(w->seekbar_adj);
@@ -853,6 +991,10 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
     res = xmmsc_signal_playback_playtime(w->conn);
     xmmsc_result_notifier_set(res, playback_playtime_changed, w);
     xmmsc_result_unref(res);
+    // server config が変わった
+    res = xmmsc_broadcast_config_value_changed(w->conn);
+    xmmsc_result_notifier_set(res, configval_changed, w);
+    xmmsc_result_unref(res);
     
     // ここから先は、現在の状態の取得
     res = xmmsc_playback_status(w->conn);
@@ -866,6 +1008,12 @@ static gboolean callback(MatePanelApplet *applet, const gchar *iid, gpointer use
     xmmsc_result_unref(res);
     res = xmmsc_playlist_current_active(w->conn);
     xmmsc_result_notifier_set(res, playlist_list_loaded, w);
+    xmmsc_result_unref(res);
+    res = xmmsc_config_get_value(w->conn, "playlist.repeat_all");
+    xmmsc_result_notifier_set(res, configval_repeat_all_got, w);
+    xmmsc_result_unref(res);
+    res = xmmsc_config_get_value(w->conn, "playlist.repeat_one");
+    xmmsc_result_notifier_set(res, configval_repeat_one_got, w);
     xmmsc_result_unref(res);
     
     return TRUE;

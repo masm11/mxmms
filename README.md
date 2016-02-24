@@ -27,6 +27,17 @@ Add an applet to the panel.
 
 The shown applet is a button, so you can click it to play/pause.
 
+You can click it with the right button to show the menu. Next and
+Previous jump to the beginning of a music. Previous jumps to the
+beginning of the music if more than 3 seconds have passed since the
+beginning of the music, otherwise to the beginning of the previous
+music.
+
+You can select Others... to do other operation. In Title List page,
+you can jump to another music by double click on the music title. In
+Playlists page, you can switch to another playlist by double click on
+the playlist name. Clicking the radio buttons do not work.
+
 ## License
 
 GPL3. See COPYING.

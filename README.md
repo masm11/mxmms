@@ -38,6 +38,11 @@ you can jump to another music by double click on the music title. In
 Playlists page, you can switch to another playlist by double click on
 the playlist name. Clicking the radio buttons do not work.
 
+## Bugs
+
+This program does not behave properly when you change the orientation
+of the panel.
+
 ## License
 
 GPL3. See COPYING.

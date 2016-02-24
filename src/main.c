@@ -609,13 +609,32 @@ static void toggled(GtkCellRendererToggle *cell_renderer, gchar *path, gpointer 
     xmmsc_result_unref(res);
 }
 
+static void menu_config_row_activated(GtkTreeView *view,
+	GtkTreePath *path, GtkTreeViewColumn *column, gpointer user_data)
+{
+    struct work_t *w = user_data;
+    GtkTreeIter iter;
+    if (!gtk_tree_model_get_iter(GTK_TREE_MODEL(w->config_bool_store), &iter, path))
+	return;
+    const gchar *key;
+    gboolean val;
+    gtk_tree_model_get(GTK_TREE_MODEL(w->config_bool_store), &iter,
+	    COL1_KEY, &key,
+	    COL1_STATE, &val,
+	    -1);
+    
+    xmmsc_result_t *res;
+    res = xmmsc_config_set_value(w->conn, key, val ? "0" : "1");
+    xmmsc_result_unref(res);
+}
+
 static GtkWidget *create_server_config_page(struct work_t *w)
 {
     GtkWidget *scr = gtk_scrolled_window_new(NULL, NULL);
     gtk_widget_show(scr);
     
     GtkWidget *view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(w->config_bool_store));
-    // g_signal_connect(view, "row-activated", G_CALLBACK(menu_playlists_row_activated), w);
+    g_signal_connect(view, "row-activated", G_CALLBACK(menu_config_row_activated), w);
     
     GtkCellRenderer *renderer;
     GtkTreeViewColumn *column;
@@ -871,6 +890,7 @@ static void destroy(MatePanelApplet *applet, gpointer user_data)
     g_list_free_full(w->last_playlists, g_free);
     g_object_unref(w->title_store);
     g_object_unref(w->plist_store);
+    g_object_unref(w->config_bool_store);
     g_object_unref(w->seekbar_adj);
     g_free(w);
 }

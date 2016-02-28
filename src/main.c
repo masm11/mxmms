@@ -569,7 +569,6 @@ static void menu_playlists_row_activated(GtkTreeView *view,
     
     xmmsc_result_t *res;
     res = xmmsc_playlist_load(w->conn, name);
-    xmmsc_result_notifier_set(res, playlist_play, w);	// fixme: 要るか?
     xmmsc_result_unref(res);
 }
 

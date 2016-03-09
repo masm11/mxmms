@@ -689,6 +689,7 @@ static void menu_controller(GtkWidget *ww, gpointer user_data)
     
     if (w->dialog != NULL) {
 	printf("not null.\n");
+	gdk_window_raise(gtk_widget_get_window(w->dialog));
 	return;
     }
     
